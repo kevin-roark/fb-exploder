@@ -202,8 +202,8 @@ $(function() {
     var delaySpit = function(delay) { setTimeout(spit, delay); };
 
     // do each photo twice
-    for (var i = 0; i < 2; i++) {
-      delaySpit(i * 30000);
+    for (var i = 0; i < 6; i++) {
+      delaySpit(i * 20000);
     }
   }
 
@@ -223,7 +223,7 @@ $(function() {
     var $img = $('<img class="fb-photo" src="' + photo.picture + '""/>');
     $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
     $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
-    $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
+    $img.css('width', (window.innerWidth * (Math.random() * 0.2 + 0.05)) + 'px');
     return $img;
   }
 
@@ -238,7 +238,7 @@ $(function() {
     var delay = 0;
 
     data.forEach(function(post) {
-      delay += Math.random() * 666 + 666;
+      delay += Math.random() * 400 + 300;
 
       setTimeout(function() {
         $container.append(renderedPost(post));
@@ -254,6 +254,7 @@ $(function() {
 
     var $el = $('<div class="fb-post">' + text + '</div>');
     $el.css('color', color.randomBrightColor());
+    $el.css('background-color', color.randomBrightColor());
     $el.css('font-size', (Math.floor(Math.random() * 30) + 12) + 'px');
 
     var width = (window.innerWidth * (Math.random() * 0.33 + 0.33));
