@@ -24,7 +24,25 @@ module.exports.init = function(callback) {
 };
 
 module.exports.login = function(callback) {
-  var scope = 'public_profile,user_photos,user_friends,user_likes,user_posts';
+  var scope = [
+    'public_profile',
+    'user_photos',
+    'user_friends',
+    'user_likes',
+    'user_posts',
+    'user_managed_groups',
+    'user_about_me',
+    'user_birthday',
+    'user_relationships',
+    'user_tagged_places',
+    'user_work_history',
+    'user_education_history',
+    'user_location',
+    'user_religion_politics',
+    'user_events',
+    'user_hometown',
+    'user_relationship_details'
+  ].join(',');
   window.FB.login(callback, {scope: scope});
 };
 
@@ -32,8 +50,28 @@ var api = module.exports.api = function(endpoint, callback) {
   window.FB.api(endpoint, callback);
 };
 
-module.exports.photos = function(callback) {
-  api('/me/photos?fields=width,height,images,name,updated_time,picture&limit=666', callback);
+module.exports.meDump = function(callback) {
+  var photosField = 'photos.limit(666){width,height,images,name,updated_time,picture}';
+  var albumsField = 'albums.limit(666){count,created_time,description,location,name,photos.limit(666){picture,name}}';
+  var postsField = 'posts.limit(666){created_time,description,link,message,picture,shares}';
+  var placesField = 'tagged_places.limit(666){created_time,place{name}}';
+  var friendsField = 'friends.limit(5000)';
+  var eventsField = 'events.limit(666){description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count}';
+  var likesField = 'likes.limit(666){about,category,cover,description,name,likes}';
+  var groupsField = 'groups.limit(666){cover,description,name,privacy}';
+  var demographicFields = 'family{name},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover';
+  var combinedFields = [
+    photosField,
+    albumsField,
+    postsField,
+    placesField,
+    friendsField,
+    eventsField,
+    likesField,
+    groupsField,
+    demographicFields
+  ].join(',');
+  api('/me?fields=' + combinedFields, callback);
 };
 
 },{}],2:[function(require,module,exports){
@@ -46,7 +84,7 @@ $(function() {
   var $facebookLoginButton = $('#facebook-login-button');
 
   // init
-  fb.init(() => {
+  fb.init(function() {
     $facebookLoginButton.fadeIn();
   });
 
@@ -59,22 +97,26 @@ $(function() {
   function didLogin() {
     $('#welcome-container').fadeOut(1000);
 
-    fb.api('/me', function(response) {
-      console.log(response);
-    });
-
-    fb.photos(function(response) {
+    fb.meDump(function(response) {
       console.log(response);
 
-      var data = response.data;
-      spitPhotos(data);
-      for (var i = 0; i < 4; i++) {
-        setTimeout(function() {
-          spitPhotos(data);
-        }, i * 1000);
-      }
+      handlePhotos(response.photos);
     });
+  }
 
+  function handlePhotos(photos) {
+    if (!photos) {
+      return;
+    }
+
+    var data = photos.data;
+    var spit = function() { spitPhotos(data); };
+    var delaySpit = function(delay) { setTimeout(spit, delay); };
+
+    // spit 5 times
+    for (var i = 0; i < 5; i++) {
+      delaySpit(i * 10000);
+    }
   }
 
   function spitPhotos(photos) {
@@ -88,7 +130,7 @@ $(function() {
         $img.css('position', 'fixed');
         $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
         $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
-        $img.css('width', (Math.random() * window.innerWidth * 0.1 + 0.08) + 'px');
+        $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
         $('body').append($img);
       }, delay);
     });

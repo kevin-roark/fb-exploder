@@ -7,7 +7,7 @@ $(function() {
   var $facebookLoginButton = $('#facebook-login-button');
 
   // init
-  fb.init(() => {
+  fb.init(function() {
     $facebookLoginButton.fadeIn();
   });
 
@@ -20,22 +20,26 @@ $(function() {
   function didLogin() {
     $('#welcome-container').fadeOut(1000);
 
-    fb.api('/me', function(response) {
-      console.log(response);
-    });
-
-    fb.photos(function(response) {
+    fb.meDump(function(response) {
       console.log(response);
 
-      var data = response.data;
-      spitPhotos(data);
-      for (var i = 0; i < 4; i++) {
-        setTimeout(function() {
-          spitPhotos(data);
-        }, i * 1000);
-      }
+      handlePhotos(response.photos);
     });
+  }
 
+  function handlePhotos(photos) {
+    if (!photos) {
+      return;
+    }
+
+    var data = photos.data;
+    var spit = function() { spitPhotos(data); };
+    var delaySpit = function(delay) { setTimeout(spit, delay); };
+
+    // spit 5 times
+    for (var i = 0; i < 5; i++) {
+      delaySpit(i * 10000);
+    }
   }
 
   function spitPhotos(photos) {
@@ -49,7 +53,7 @@ $(function() {
         $img.css('position', 'fixed');
         $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
         $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
-        $img.css('width', (Math.random() * window.innerWidth * 0.1 + 0.08) + 'px');
+        $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
         $('body').append($img);
       }, delay);
     });
