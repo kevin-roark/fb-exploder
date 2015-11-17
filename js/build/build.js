@@ -1,4 +1,32 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* thanks henry */
+
+function v() {
+  return Math.floor(Math.random() * 256);
+}
+
+module.exports.randomColor = function() {
+  return "rgb(" + v() + "," + v() + ", " + v() + ")";
+};
+
+module.exports.randomBrightColor = function() {
+  var key = Math.floor(Math.random() * 6);
+
+  if (key === 0)
+    return "rgb(" + "0,255," + v() + ")";
+  else if (key === 1)
+    return "rgb(" + "0," + v() + ",255)";
+  else if (key === 2)
+    return "rgb(" + "255, 0," + v() + ")";
+  else if (key === 3)
+    return "rgb(" + "255," + v() + ",0)";
+  else if (key === 4)
+    return "rgb(" + v() + ",255,0)";
+  else
+    return "rgb(" + v() + ",0,255)";
+};
+
+},{}],2:[function(require,module,exports){
 
 module.exports.init = function(callback) {
   window.fbAsyncInit = function() {
@@ -40,8 +68,7 @@ module.exports.login = function(callback) {
     'user_location',
     'user_religion_politics',
     'user_events',
-    'user_hometown',
-    'user_relationship_details'
+    'user_hometown'
   ].join(',');
   window.FB.login(callback, {scope: scope});
 };
@@ -74,7 +101,7 @@ module.exports.meDump = function(callback) {
   api('/me?fields=' + combinedFields, callback);
 };
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 
 module.exports = LoadingView;
 
@@ -116,26 +143,34 @@ LoadingView.prototype.stop = function() {
   this.$el.fadeOut();
 };
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 
 var fb = require('./fb');
 var LoadingView = require('./loading-view');
+var color = require('./color');
 
 $(function() {
 
-  // state
+  /// state
+
+  var $container = $('body');
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
     baseText: 'CRUNCHING YOUR FACEBOOK'
   });
 
-  // init
   fb.init(function() {
     $facebookLoginButton.fadeIn();
   });
 
-  // behavior time
+  $(window).resize(layout);
+  function layout() {
+    $container.css('height', (window.innerHeight * 2) + 'px');
+  }
+  layout();
+
+  /// behavior
 
   $facebookLoginButton.click(function() {
     fb.login(didLogin);
@@ -151,8 +186,11 @@ $(function() {
       loadingView.stop();
 
       handlePhotos(response.photos);
+      handlePosts(response.posts);
     });
   }
+
+  /// photos
 
   function handlePhotos(photos) {
     if (!photos) {
@@ -163,9 +201,9 @@ $(function() {
     var spit = function() { spitPhotos(data); };
     var delaySpit = function(delay) { setTimeout(spit, delay); };
 
-    // spit 5 times
-    for (var i = 0; i < 5; i++) {
-      delaySpit(i * 10000);
+    // do each photo twice
+    for (var i = 0; i < 2; i++) {
+      delaySpit(i * 30000);
     }
   }
 
@@ -176,16 +214,56 @@ $(function() {
       delay += Math.random() * 200 + 50;
 
       setTimeout(function() {
-        var $img = $('<img src="' + photo.picture + '""/>');
-        $img.css('position', 'fixed');
-        $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
-        $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
-        $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
-        $('body').append($img);
+        $container.append(renderedPhoto(photo));
       }, delay);
     });
   }
 
+  function renderedPhoto(photo) {
+    var $img = $('<img class="fb-photo" src="' + photo.picture + '""/>');
+    $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
+    $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
+    $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
+    return $img;
+  }
+
+  /// posts
+
+  function handlePosts(posts) {
+    if (!posts) {
+      return;
+    }
+
+    var data = posts.data;
+    var delay = 0;
+
+    data.forEach(function(post) {
+      delay += Math.random() * 666 + 666;
+
+      setTimeout(function() {
+        $container.append(renderedPost(post));
+      }, delay);
+    });
+  }
+
+  function renderedPost(post) {
+    var text = '';
+    if (post.description) text += post.description;
+    if (post.message) text += ' — ' + post.message;
+    if (post.link) text += ' — <a href="' + post.link + '">' + post.link + '</a>';
+
+    var $el = $('<div class="fb-post">' + text + '</div>');
+    $el.css('color', color.randomBrightColor());
+    $el.css('font-size', (Math.floor(Math.random() * 30) + 12) + 'px');
+
+    var width = (window.innerWidth * (Math.random() * 0.33 + 0.33));
+    $el.css('max-width', width + 'px');
+    $el.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
+    $el.css('top', (Math.random() * window.innerHeight * 0.85) + 'px');
+
+    return $el;
+  }
+
 });
 
-},{"./fb":1,"./loading-view":2}]},{},[3]);
+},{"./color":1,"./fb":2,"./loading-view":3}]},{},[4]);

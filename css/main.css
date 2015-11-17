@@ -9,10 +9,29 @@ body {
   height: 100%;
 }
 
+a {
+  color: rgba(0, 125, 255, 0.87);
+  text-decoration: none;
+}
+  a:hover, a:focus {
+    text-decoration: underline;
+    font-style: italic;
+  }
+
 #facebook-login-button {
   display: none;
 }
 
 #loading-view {
   display: none;
+}
+
+.fb-photo {
+  position: absolute;
+}
+
+.fb-post {
+  position: absolute;
+  padding: 5px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
 }

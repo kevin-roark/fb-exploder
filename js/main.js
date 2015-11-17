@@ -1,22 +1,30 @@
 
 var fb = require('./fb');
 var LoadingView = require('./loading-view');
+var color = require('./color');
 
 $(function() {
 
-  // state
+  /// state
+
+  var $container = $('body');
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
     baseText: 'CRUNCHING YOUR FACEBOOK'
   });
 
-  // init
   fb.init(function() {
     $facebookLoginButton.fadeIn();
   });
 
-  // behavior time
+  $(window).resize(layout);
+  function layout() {
+    $container.css('height', (window.innerHeight * 2) + 'px');
+  }
+  layout();
+
+  /// behavior
 
   $facebookLoginButton.click(function() {
     fb.login(didLogin);
@@ -32,8 +40,11 @@ $(function() {
       loadingView.stop();
 
       handlePhotos(response.photos);
+      handlePosts(response.posts);
     });
   }
+
+  /// photos
 
   function handlePhotos(photos) {
     if (!photos) {
@@ -44,9 +55,9 @@ $(function() {
     var spit = function() { spitPhotos(data); };
     var delaySpit = function(delay) { setTimeout(spit, delay); };
 
-    // spit 5 times
-    for (var i = 0; i < 5; i++) {
-      delaySpit(i * 10000);
+    // do each photo twice
+    for (var i = 0; i < 2; i++) {
+      delaySpit(i * 30000);
     }
   }
 
@@ -57,14 +68,54 @@ $(function() {
       delay += Math.random() * 200 + 50;
 
       setTimeout(function() {
-        var $img = $('<img src="' + photo.picture + '""/>');
-        $img.css('position', 'fixed');
-        $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
-        $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
-        $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
-        $('body').append($img);
+        $container.append(renderedPhoto(photo));
       }, delay);
     });
+  }
+
+  function renderedPhoto(photo) {
+    var $img = $('<img class="fb-photo" src="' + photo.picture + '""/>');
+    $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
+    $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
+    $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
+    return $img;
+  }
+
+  /// posts
+
+  function handlePosts(posts) {
+    if (!posts) {
+      return;
+    }
+
+    var data = posts.data;
+    var delay = 0;
+
+    data.forEach(function(post) {
+      delay += Math.random() * 666 + 666;
+
+      setTimeout(function() {
+        $container.append(renderedPost(post));
+      }, delay);
+    });
+  }
+
+  function renderedPost(post) {
+    var text = '';
+    if (post.description) text += post.description;
+    if (post.message) text += ' — ' + post.message;
+    if (post.link) text += ' — <a href="' + post.link + '">' + post.link + '</a>';
+
+    var $el = $('<div class="fb-post">' + text + '</div>');
+    $el.css('color', color.randomBrightColor());
+    $el.css('font-size', (Math.floor(Math.random() * 30) + 12) + 'px');
+
+    var width = (window.innerWidth * (Math.random() * 0.33 + 0.33));
+    $el.css('max-width', width + 'px');
+    $el.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
+    $el.css('top', (Math.random() * window.innerHeight * 0.85) + 'px');
+
+    return $el;
   }
 
 });

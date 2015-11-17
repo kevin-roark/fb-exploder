@@ -39,8 +39,7 @@ module.exports.login = function(callback) {
     'user_location',
     'user_religion_politics',
     'user_events',
-    'user_hometown',
-    'user_relationship_details'
+    'user_hometown'
   ].join(',');
   window.FB.login(callback, {scope: scope});
 };
