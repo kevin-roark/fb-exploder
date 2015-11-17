@@ -12,3 +12,7 @@ body {
 #facebook-login-button {
   display: none;
 }
+
+#loading-view {
+  display: none;
+}

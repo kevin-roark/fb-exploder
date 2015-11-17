@@ -1,10 +1,15 @@
 
 var fb = require('./fb');
+var LoadingView = require('./loading-view');
 
 $(function() {
 
   // state
   var $facebookLoginButton = $('#facebook-login-button');
+  var loadingView = new LoadingView({
+    $el: $('#loading-view'),
+    baseText: 'CRUNCHING YOUR FACEBOOK'
+  });
 
   // init
   fb.init(function() {
@@ -20,8 +25,11 @@ $(function() {
   function didLogin() {
     $('#welcome-container').fadeOut(1000);
 
+    loadingView.start();
+
     fb.meDump(function(response) {
       console.log(response);
+      loadingView.stop();
 
       handlePhotos(response.photos);
     });

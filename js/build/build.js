@@ -76,12 +76,59 @@ module.exports.meDump = function(callback) {
 
 },{}],2:[function(require,module,exports){
 
+module.exports = LoadingView;
+
+function LoadingView(options) {
+  this.$el = options.$el;
+  this.baseText = options.baseText || 'loading';
+  this.delay = options.delay || 250;
+
+  this.loading = false;
+}
+
+LoadingView.prototype.start = function() {
+  this.loading = true;
+  this.$el.text(this.baseText);
+  this.$el.fadeIn();
+
+  this.update();
+};
+
+LoadingView.prototype.update = function() {
+  if (!this.loading) {
+    return;
+  }
+
+  var currentText = this.$el.text();
+  if (currentText.length < this.baseText.length + 3) {
+    currentText += '.';
+    this.$el.text(currentText);
+  }
+  else {
+    this.$el.text(this.baseText);
+  }
+
+  setTimeout(this.update.bind(this), this.delay);
+};
+
+LoadingView.prototype.stop = function() {
+  this.loading = false;
+  this.$el.fadeOut();
+};
+
+},{}],3:[function(require,module,exports){
+
 var fb = require('./fb');
+var LoadingView = require('./loading-view');
 
 $(function() {
 
   // state
   var $facebookLoginButton = $('#facebook-login-button');
+  var loadingView = new LoadingView({
+    $el: $('#loading-view'),
+    baseText: 'CRUNCHING YOUR FACEBOOK'
+  });
 
   // init
   fb.init(function() {
@@ -97,8 +144,11 @@ $(function() {
   function didLogin() {
     $('#welcome-container').fadeOut(1000);
 
+    loadingView.start();
+
     fb.meDump(function(response) {
       console.log(response);
+      loadingView.stop();
 
       handlePhotos(response.photos);
     });
@@ -138,4 +188,4 @@ $(function() {
 
 });
 
-},{"./fb":1}]},{},[2]);
+},{"./fb":1,"./loading-view":2}]},{},[3]);
