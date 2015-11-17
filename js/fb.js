@@ -50,9 +50,9 @@ var api = module.exports.api = function(endpoint, callback) {
 };
 
 module.exports.meDump = function(callback) {
-  var photosField = 'photos.limit(666){width,height,images,name,updated_time,picture}';
+  var photosField = 'photos.limit(666){width,height,name,updated_time,picture,comments,tags,likes}';
   var albumsField = 'albums.limit(666){count,created_time,description,location,name,photos.limit(666){picture,name}}';
-  var postsField = 'posts.limit(666){created_time,description,link,message,picture,shares}';
+  var postsField = 'posts.limit(666){created_time,description,link,message,picture,shares,message_tags}';
   var placesField = 'tagged_places.limit(666){created_time,place{name}}';
   var friendsField = 'friends.limit(5000)';
   var eventsField = 'events.limit(666){description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count}';
