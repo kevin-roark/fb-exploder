@@ -7,7 +7,7 @@ $(function() {
 
   /// state
 
-  var $container = $('body');
+  var $container = $('#content-container');
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -18,11 +18,23 @@ $(function() {
     $facebookLoginButton.fadeIn();
   });
 
-  $(window).resize(layout);
-  function layout() {
-    $container.css('height', (window.innerHeight * 2) + 'px');
-  }
-  layout();
+  $(window).mousemove(function(ev) {
+    var percent = ev.clientX / window.innerWidth;
+    var halfWidth = window.innerWidth / 2;
+    var normalizedPercent = percent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
+
+    var containerRotation = percent * 180 - 90;
+    $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
+
+    var zTransform = -300;
+
+    var photoXTranslate = Math.pow(normalizedPercent, 2) * 1200;
+    if (percent < 0.5) photoXTranslate = -photoXTranslate;
+    $('.fb-photo').css('transform', 'translateZ(' + zTransform + 'px) translateX(' + photoXTranslate + 'px)');
+
+    var postXTranslate = -photoXTranslate;
+    $('.fb-post').css('transform', 'translateZ(' + zTransform + 'px) translateX(' + postXTranslate + 'px)');
+  });
 
   /// behavior
 
@@ -74,7 +86,7 @@ $(function() {
   }
 
   function renderedPhoto(photo) {
-    var $img = $('<img class="fb-photo" src="' + photo.picture + '""/>');
+    var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
     $img.css('top', (Math.random() * window.innerHeight * 0.9) + 'px');
     $img.css('left', (Math.random() * window.innerWidth * 0.9) + 'px');
     $img.css('width', (window.innerWidth * (Math.random() * 0.1 + 0.05)) + 'px');
@@ -106,7 +118,7 @@ $(function() {
     if (post.message) text += ' — ' + post.message;
     if (post.link) text += ' — <a href="' + post.link + '">' + post.link + '</a>';
 
-    var $el = $('<div class="fb-post">' + text + '</div>');
+    var $el = $('<div class="fb-element fb-post">' + text + '</div>');
     $el.css('color', color.randomBrightColor());
     $el.css('font-size', (Math.floor(Math.random() * 30) + 12) + 'px');
 
