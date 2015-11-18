@@ -28,6 +28,8 @@ module.exports.randomBrightColor = function() {
 
 },{}],2:[function(require,module,exports){
 
+var TEST_MODE = true;
+
 module.exports.init = function(callback) {
   window.fbAsyncInit = function() {
     window.FB.init({
@@ -78,14 +80,19 @@ var api = module.exports.api = function(endpoint, callback) {
 };
 
 module.exports.meDump = function(callback) {
-  var photosField = 'photos.limit(666){width,height,name,updated_time,picture,comments,tags,likes}';
-  var albumsField = 'albums.limit(666){count,created_time,description,location,name,photos.limit(666){picture,name}}';
-  var postsField = 'posts.limit(666){created_time,description,link,message,picture,shares,message_tags}';
-  var placesField = 'tagged_places.limit(666){created_time,place{name}}';
-  var friendsField = 'friends.limit(5000)';
-  var eventsField = 'events.limit(666){description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count}';
-  var likesField = 'likes.limit(666){about,category,cover,description,name,likes}';
-  var groupsField = 'groups.limit(666){cover,description,name,privacy}';
+  function limit(field) {
+    var count = TEST_MODE ? 50 : 666;
+    return field + '.limit(' + count + ')';
+  }
+
+  var photosField = limit('photos') + '{width,height,name,updated_time,picture,comments,tags,likes}';
+  var albumsField = limit('albums') + '{count,created_time,description,location,name,photos.limit(666){picture,name}}';
+  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,message_tags}';
+  var placesField = limit('tagged_places') + '{created_time,place{name}}';
+  var friendsField = limit('friends');
+  var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count}';
+  var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
+  var groupsField = limit('groups') + '{cover,description,name,privacy}';
   var demographicFields = 'family{name},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover';
   var combinedFields = [
     photosField,
