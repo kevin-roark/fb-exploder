@@ -1,4 +1,5 @@
 
+var moment = require('moment');
 var fb = require('./fb');
 var LoadingView = require('./loading-view');
 var color = require('./color');
@@ -13,12 +14,15 @@ $(function() {
     $el: $('#loading-view'),
     baseText: 'CRUNCHING YOUR FACEBOOK'
   });
+  var meData = {};
 
   fb.init(function() {
     $facebookLoginButton.fadeIn();
   });
 
   $(window).mousemove(function(ev) {
+    // nice reference for 3d css effects: http://tympanus.net/Development/StackEffects/
+
     var percent = ev.clientX / window.innerWidth;
     var halfWidth = window.innerWidth / 2;
     var normalizedPercent = percent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
@@ -50,6 +54,7 @@ $(function() {
     fb.meDump(function(response) {
       console.log(response);
       loadingView.stop();
+      meData = response;
 
       handlePhotos(response.photos);
       handlePosts(response.posts);
@@ -64,13 +69,7 @@ $(function() {
     }
 
     var data = photos.data;
-    var spit = function() { spitPhotos(data); };
-    var delaySpit = function(delay) { setTimeout(spit, delay); };
-
-    // do each photo twice
-    for (var i = 0; i < 6; i++) {
-      delaySpit(i * 20000);
-    }
+    spitPhotos(data);
   }
 
   function spitPhotos(photos) {
@@ -113,22 +112,81 @@ $(function() {
   }
 
   function renderedPost(post) {
-    var text = '';
-    if (post.description) text += post.description;
-    if (post.message) text += ' — ' + post.message;
-    if (post.link) text += ' — <a href="' + post.link + '">' + post.link + '</a>';
+    var html = '<div class="fb-element fb-post">';
+    html += '<div class="fb-post-content">';
+    html += renderedPostHeader(post);
 
-    var $el = $('<div class="fb-element fb-post">' + text + '</div>');
-    $el.css('color', color.randomBrightColor());
-    $el.css('background-color', color.randomBrightColor());
-    $el.css('font-size', (Math.floor(Math.random() * 30) + 12) + 'px');
+    if (post.message) html += '<div class="fb-post-message">' + post.message + '</div>';
 
-    var width = (window.innerWidth * (Math.random() * 0.33 + 0.33));
-    $el.css('max-width', width + 'px');
+    if (post.link && post.link.indexOf('facebook') === -1) {
+      html += '<a href="' + post.link + '">';
+      if (post.picture) {
+        html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+      }
+      html += '<div class="fb-link-body">';
+      html += '<div class="fb-link">' + post.link + '</div>';
+      if (post.description) {
+        html += '<div class="fb-post-description">' + post.description + '</div>';
+      }
+      html += '</div></a>'; // link body, then a tag
+    }
+    else if (post.picture) {
+      html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+      if (post.description) {
+        html += '<div class="fb-post-description">' + post.description + '</div>';
+      }
+    }
+
+    html += '</div>'; // content
+
+    html += renderedStats(post);
+
+    html += '</div>';
+
+    var $el = $(html);
+    var width = Math.random() * 300 + 200;
+    $el.css('width', width + 'px');
     $el.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
-    $el.css('top', (Math.random() * window.innerHeight * 0.85) + 'px');
+    $el.css('top', (Math.random() * window.innerHeight * 0.6) + 'px');
 
     return $el;
+  }
+
+  function renderedPostHeader(post) {
+    var html = '<div class="fb-post-header">';
+    html += '<img class="fb-post-header-picture" src="' + meData.picture.data.url + '" />';
+    html += '<div class="fb-post-header-text">';
+    html += '<div class="fb-post-header-name">' + meData.name + '</div>';
+    html += '<div class="fb-post-header-date">' + formattedDate(post.created_time) + '</div>';
+    html += '</div></div>'; // text, then header
+    return html;
+  }
+
+  function renderedStats(post) {
+    var likeCount = post.likes ? post.likes.data.length : 0;
+    var shareCount = post.shares ? post.shares.length : 0;
+    var commentCount = post.comments ? post.comments.data.length : 0;
+
+    var html = '<div class="fb-post-data">';
+    html += '<div class="fb-post-datapoint">' + likeCount + ' likes</div>';
+    html += '<div class="fb-post-datapoint">' + commentCount + ' comments</div>';
+    html += '<div class="fb-post-datapoint">' + shareCount + ' shares</div>';
+
+    for (var i = 0; i < commentCount; i++) {
+      var comment = post.comments.data[i];
+      html += '<div class="fb-post-comment">';
+      html += '<span class="fb-post-comment-name">' + comment.from.name + '</span>';
+      html += ' <span class="fb-post-comment-message">' + comment.message + '</span>';
+      html += ' <span class="fb-post-comment-date">' + formattedDate(comment.created_time) + '</span>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function formattedDate(date) {
+    return moment(date).format('MMMM Do YYYY, h:mm a');
   }
 
 });
