@@ -9,6 +9,9 @@ $(function() {
   /// state
 
   var $container = $('#content-container');
+  var $photosLayer = $('#photos-layer');
+  var $postsLayer = $('#posts-layer');
+  var orderedLayers = [$photosLayer, $postsLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -27,17 +30,18 @@ $(function() {
     var halfWidth = window.innerWidth / 2;
     var normalizedPercent = percent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
 
-    var containerRotation = percent * 180 - 90;
+    var containerRotation = percent * 120 - 60;
     $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
 
     var zTransform = -300;
 
-    var photoXTranslate = Math.pow(normalizedPercent, 2) * 1200;
-    if (percent < 0.5) photoXTranslate = -photoXTranslate;
-    $('.fb-photo').css('transform', 'translateZ(' + zTransform + 'px) translateX(' + photoXTranslate + 'px)');
-
-    var postXTranslate = -photoXTranslate;
-    $('.fb-post').css('transform', 'translateZ(' + zTransform + 'px) translateX(' + postXTranslate + 'px)');
+    var xTranslationMagnitude = Math.pow(normalizedPercent, 2) * 400;
+    if (percent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
+    for (var i = 0; i < orderedLayers.length; i++) {
+      var $layer = orderedLayers[i];
+      var xTranslation = (i / (orderedLayers.length - 1)) * (2 * xTranslationMagnitude) - xTranslationMagnitude;
+      $layer.css('transform', 'translateZ(' + zTransform + 'px) translateX(' + xTranslation + 'px)');
+    }
   });
 
   /// behavior
@@ -79,7 +83,7 @@ $(function() {
       delay += Math.random() * 200 + 50;
 
       setTimeout(function() {
-        $container.append(renderedPhoto(photo));
+        $photosLayer.append(renderedPhoto(photo));
       }, delay);
     });
   }
@@ -106,7 +110,7 @@ $(function() {
       delay += Math.random() * 400 + 300;
 
       setTimeout(function() {
-        $container.append(renderedPost(post));
+        $postsLayer.append(renderedPost(post));
       }, delay);
     });
   }
