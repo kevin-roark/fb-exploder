@@ -1,6 +1,7 @@
 
 var moment = require('moment');
 var TWEEN = require('tween.js');
+var kt = require('kutility');
 
 var fb = require('./fb');
 var LoadingView = require('./loading-view');
@@ -19,6 +20,7 @@ $(function() {
     $el: $('#loading-view'),
     baseText: 'CRUNCHING YOUR FACEBOOK'
   });
+  var updateFunctions = [];
   var meData;
 
   update();
@@ -73,169 +75,97 @@ $(function() {
     requestAnimationFrame(update);
 
     TWEEN.update();
+
+    for (var i = 0; i < updateFunctions.length; i++) {
+      updateFunctions[i]();
+    }
+  }
+
+  function updateYTranslation($html) {
+    $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
   }
 
   /// photos
 
-  function handlePhotos(photos) {
-    if (!photos) {
+  function handlePhotos(data) {
+    if (!data) {
       return;
     }
 
-    var data = photos.data;
-    spitPhotos(data);
-  }
-
-  function spitPhotos(photos) {
+    var photos = data.data;
     var photoIndex = 0;
     var activeRenderedPhotos = [];
-    var isFillingScreen = true;
-    var accumulatedScreenFillingTargetBottom = 0;
-    var currentRowHeight = 0;
 
-    doCurrentRowCalculations();
-    spitNextPhoto();
+    var columnWidths = kt.shuffle([0.3, 0.2, 0.15, 0.15, 0.1, 0.05, 0.05]);
+    var columnSpeeds = kt.shuffle([1, 2, 2, 2, 3, 3, 4]);
+    var columnOffsets = [0];
+    for (var offsetIndex = 1; offsetIndex < columnWidths.length; offsetIndex++) {
+      var accumlatedOffset = columnOffsets[offsetIndex - 1];
+      var lastItemWidth = columnWidths[offsetIndex - 1];
+      columnOffsets.push(accumlatedOffset + lastItemWidth);
+    }
 
-    function spitNextPhoto() {
+    function nextPhoto() {
       if (photoIndex >= photos.length) {
         photoIndex = 0;
       }
+      return photos[photoIndex++];
+    }
 
-      var photo = photos[photoIndex];
+    function addPhotoToColumn(idx) {
+      var photo = nextPhoto();
 
-      if (!photo.hasBeenCalculated) {
-        console.log('resetting.. ' + accumulatedScreenFillingTargetBottom);
-        if (accumulatedScreenFillingTargetBottom >= 0.95) {
-          isFillingScreen = false;
-        }
-
-        doCurrentRowCalculations();
-
-        if (!isFillingScreen) {
-          moveAllPhotosDown(currentRowHeight * window.innerWidth);
-        }
-
-        var nextRowTime = Math.random() * 2500 + 2500;
-        setTimeout(spitNextPhoto, nextRowTime);
-        return;
-      }
-
-      photoIndex += 1;
+      var width = columnWidths[idx];
+      var leftOffset = columnOffsets[idx];
 
       var $html = renderedPhoto(photo);
-      $html.css('left', photo.leftOffset + '%');
-      $html.css('width', photo.widthPercentage + '%');
+      $html.css('left', (leftOffset * 100) + '%');
+      $html.css('width', (width * 100) + '%');
       $html.css('top', 0);
-      $html._yOffset = -(photo.renderedHeight * window.innerWidth);
-      $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
-      photo.hasBeenCalculated = false;
+
+      $html._columnIndex = idx;
+      $html._renderedHeight = (photo.height / photo.width) * width; // unit is decimal percentage of window width
+      $html._yOffset = -($html._renderedHeight * window.innerWidth);
+      updateYTranslation($html);
 
       activeRenderedPhotos.push($html);
       $photosLayer.append($html);
-
-      var targetOffset;
-      if (isFillingScreen) {
-        targetOffset = window.innerHeight - (accumulatedScreenFillingTargetBottom * window.innerWidth) - (photo.renderedHeight * window.innerWidth);
-      }
-      else {
-        targetOffset = (photo.renderedHeight * window.innerWidth) - currentRowHeight;
-      }
-      var time = Math.random() * 1500 + 1500;
-      var downTween = new TWEEN.Tween($html).to({_yOffset: targetOffset}, time);
-      downTween.onUpdate(function() {
-        $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
-      });
-      downTween.onComplete(function() {
-        $html.tween = null;
-      });
-      downTween.start();
-      $html.tween = downTween;
-
-      var nextTime = Math.random() * 500 + 50;
-      setTimeout(spitNextPhoto, nextTime);
     }
 
-    function doCurrentRowCalculations() {
-      if (isFillingScreen) {
-        accumulatedScreenFillingTargetBottom += currentRowHeight; // currentRowHeight is last row's height at this point
-      }
-
-      // set rendered width and height on new row's photos
-      var widths = nextRowWidthPercentages();
-      currentRowHeight = 100000;
-      var accumlatedWidth = 0;
-      for (var i = 0; i < widths.length; i++) {
-        var relevantPhoto = photos[(photoIndex + i) % photos.length];
-        relevantPhoto.widthPercentage = widths[i];
-        relevantPhoto.leftOffset = accumlatedWidth;
-        accumlatedWidth += relevantPhoto.widthPercentage;
-        relevantPhoto.renderedHeight = (relevantPhoto.height / relevantPhoto.width) * relevantPhoto.widthPercentage * 0.01; // unit is decimal percentage of window width
-        currentRowHeight = Math.min(currentRowHeight, relevantPhoto.renderedHeight);
-        relevantPhoto.hasBeenCalculated = true;
-      }
+    for (var i = 0; i < columnWidths.length; i++) {
+      addPhotoToColumn(i);
     }
 
-    function moveAllPhotosDown(height) {
-      // move everything that currently exists down a dang notch
-      var downTweenTime = Math.random() * 1500 + 1500;
-      console.log('moving down height: ' + height);
-      activeRenderedPhotos.forEach(function($html) {
-        if ($html.tween) {
-          $html.tween.stop();
+    updateFunctions.push(function updatePhotos() {
+      for (var i = 0; i < activeRenderedPhotos.length; i++) {
+        var $html = activeRenderedPhotos[i];
+
+        // move it down
+        var speed = columnSpeeds[$html._columnIndex];
+        $html._yOffset += speed;
+        updateYTranslation($html);
+
+        // add a new guy if necessary
+        if ($html._yOffset > 0 && !$html._hasBecomeVisible) {
+          addPhotoToColumn($html._columnIndex);
+          $html._hasBecomeVisible = true;
         }
 
-        var targetOffset = $html._yOffset + height;
-        var downTween = new TWEEN.Tween($html).to({_yOffset: targetOffset}, downTweenTime);
-        downTween.onUpdate(function() {
-          $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
-        });
-        downTween.onComplete(function() {
-          $html.tween = null;
-
-          // trim
-          if ($html._yOffset > window.innerHeight) {
-            $html.remove();
-            var idx = activeRenderedPhotos.indexOf($html);
-            if (idx > -1) {
-              activeRenderedPhotos.splice(idx, 1);
-            }
+        // trim if now offscreen
+        if ($html._yOffset > window.innerHeight) {
+          $html.remove();
+          var idx = activeRenderedPhotos.indexOf($html);
+          if (idx > -1) {
+            activeRenderedPhotos.splice(idx, 1);
           }
-        });
-        downTween.start();
-        $html.tween = downTween;
-      });
-    }
+        }
+      }
+    });
   }
 
   function renderedPhoto(photo) {
     var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
     return $img;
-  }
-
-  function choice(arr) {
-    var idx = Math.floor(Math.random() * arr.length);
-    return arr[idx];
-  }
-
-  function nextRowWidthPercentages() {
-    var percentageOptions = [10, 15, 15, 20, 20, 30, 35];
-
-    var attempts = 0;
-    var sum = 0;
-    var widths = [];
-    while (sum < 100 && attempts < 100) {
-      attempts += 1;
-      var width = choice(percentageOptions);
-      if (sum + width <= 100) {
-        widths.push(width);
-        sum += width;
-      }
-    }
-    if (sum < 100) {
-      widths.push(10);
-    }
-
-    return widths;
   }
 
   /// posts
