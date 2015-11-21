@@ -71,6 +71,7 @@ a {
   line-height: 1.38;
   border: 1px solid #bbbbbb;
   color: rgba(0, 0, 0, 0.87);
+  word-wrap: break-word;
 }
   .fb-post-content {
     padding: 10px 10px 0px 10px;

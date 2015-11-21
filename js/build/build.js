@@ -185,21 +185,28 @@ $(function() {
   $(window).mousemove(function(ev) {
     // nice reference for 3d css effects: http://tympanus.net/Development/StackEffects/
 
-    var percent = ev.clientX / window.innerWidth;
+    var xPercent = ev.clientX / window.innerWidth;
     var halfWidth = window.innerWidth / 2;
-    var normalizedPercent = percent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
+    var normalizedXPercent = xPercent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
 
-    var containerRotation = percent * 120 - 60;
+    var yPercent = ev.clientY / window.innerHeight;
+    var halfHeight = window.innerHeight / 2;
+    var normalizedYPercent = yPercent > 0.5 ? (ev.clientY - halfHeight) / halfHeight : (halfHeight - ev.clientY) / halfHeight;
+
+    var containerRotation = xPercent * 10 - 5;
     $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
 
-    var zTransform = 0;
+    var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 100;
+    if (xPercent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
 
-    var xTranslationMagnitude = Math.pow(normalizedPercent, 2) * 400;
-    if (percent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
+    var yTranslationMagnitude = Math.pow(normalizedYPercent, 1) * 60;
+    if (yPercent < 0.5) yTranslationMagnitude = -yTranslationMagnitude;
+
     for (var i = 0; i < orderedLayers.length; i++) {
       var $layer = orderedLayers[i];
-      var xTranslation = (i / (orderedLayers.length - 1)) * (2 * xTranslationMagnitude) - xTranslationMagnitude;
-      $layer.css('transform', 'translateZ(' + zTransform + 'px) translateX(' + xTranslation + 'px)');
+      var xTranslation = ((i + 1) / orderedLayers.length) * xTranslationMagnitude;
+      var yTranslation = ((i + 1) / orderedLayers.length) * yTranslationMagnitude;
+      $layer.css('transform', 'translate(' + xTranslation + 'px, ' + yTranslation + 'px)');
     }
   });
 
@@ -234,8 +241,19 @@ $(function() {
     }
   }
 
-  function updateYTranslation($html) {
+  function updateYTranslation($html, speed) {
+    if (speed) {
+      $html._yOffset += speed;
+    }
+
     $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
+  }
+
+  function removeFromArray(arr, el) {
+    var idx = arr.indexOf(el);
+    if (idx > -1) {
+      arr.splice(idx, 1);
+    }
   }
 
   /// photos
@@ -295,8 +313,7 @@ $(function() {
 
         // move it down
         var speed = columnSpeeds[$html._columnIndex];
-        $html._yOffset += speed;
-        updateYTranslation($html);
+        updateYTranslation($html, speed);
 
         // add a new guy if necessary
         if ($html._yOffset > 0 && !$html._hasBecomeVisible) {
@@ -307,10 +324,7 @@ $(function() {
         // trim if now offscreen
         if ($html._yOffset > window.innerHeight) {
           $html.remove();
-          var idx = activeRenderedPhotos.indexOf($html);
-          if (idx > -1) {
-            activeRenderedPhotos.splice(idx, 1);
-          }
+          removeFromArray(activeRenderedPhotos, $html);
         }
       }
     });
@@ -323,25 +337,55 @@ $(function() {
 
   /// posts
 
-  function handlePosts(posts) {
-    if (!posts) {
+  function handlePosts(data) {
+    if (!data) {
       return;
     }
 
-    var data = posts.data;
-    var delay = 0;
+    var posts = data.data;
+    var postIndex = 0;
+    var activeRenderedPosts = [];
 
-    data.forEach(function(post) {
-      delay += Math.random() * 400 + 300;
+    function doNextPost() {
+      if (postIndex >= posts.length) {
+        postIndex = 0;
+      }
+      var post = posts[postIndex++];
 
-      setTimeout(function() {
-        $postsLayer.append(renderedPost(post));
-      }, delay);
+      var $html = renderedPost(post);
+      var width = Math.random() * 150 + 200;
+      $html.css('width', width + 'px');
+      $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
+      $html.css('top', '0');
+      $html._speed = kt.randInt(4, 10);
+      $html._yOffset = -500;
+      updateYTranslation($html);
+
+      activeRenderedPosts.push($html);
+      $postsLayer.append($html);
+
+      var delay = Math.random() * 5000 + 3000;
+      setTimeout(doNextPost, delay);
+    }
+
+    doNextPost();
+
+    updateFunctions.push(function updatePosts() {
+      for (var i = 0; i < activeRenderedPosts.length; i++) {
+        var $html = activeRenderedPosts[i];
+        updateYTranslation($html, $html._speed);
+
+        // trim if now offscreen
+        if ($html._yOffset > window.innerHeight) {
+          $html.remove();
+          removeFromArray(activeRenderedPosts, $html);
+        }
+      }
     });
   }
 
   function renderedPost(post) {
-    var html = '<div class="fb-element fb-post">';
+    var html = '<div class="fb-element fb-post"><div class="fb-post-wrapper">';
     html += '<div class="fb-post-content">';
     html += renderedPostHeader(post);
 
@@ -370,14 +414,9 @@ $(function() {
 
     html += renderedStats(post);
 
-    html += '</div>';
+    html += '</div></div>';
 
     var $el = $(html);
-    var width = Math.random() * 300 + 200;
-    $el.css('width', width + 'px');
-    $el.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
-    $el.css('top', (Math.random() * window.innerHeight * 0.6) + 'px');
-
     return $el;
   }
 
@@ -393,13 +432,16 @@ $(function() {
 
   function renderedStats(post) {
     var likeCount = post.likes ? post.likes.data.length : 0;
-    var shareCount = post.shares ? post.shares.length : 0;
+    var likeText = likeCount === 1 ? 'like' : 'likes';
+    var shareCount = post.shares ? post.shares.count : 0;
+    var shareText = shareCount === 1 ? 'share' : 'shares';
     var commentCount = post.comments ? post.comments.data.length : 0;
+    var commentText = commentCount === 1 ? 'comment' : 'comments';
 
     var html = '<div class="fb-post-data">';
-    html += '<div class="fb-post-datapoint">' + likeCount + ' likes</div>';
-    html += '<div class="fb-post-datapoint">' + commentCount + ' comments</div>';
-    html += '<div class="fb-post-datapoint">' + shareCount + ' shares</div>';
+    html += '<div class="fb-post-datapoint">' + likeCount + ' ' + likeText + '</div>';
+    html += '<div class="fb-post-datapoint">' + commentCount + ' ' + commentText + '</div>';
+    html += '<div class="fb-post-datapoint">' + shareCount + ' ' + shareText + '</div>';
 
     for (var i = 0; i < commentCount; i++) {
       var comment = post.comments.data[i];
