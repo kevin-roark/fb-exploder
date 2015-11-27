@@ -14,6 +14,7 @@ $(function() {
   var $container = $('#content-container');
   var $photosLayer = $('#photos-layer');
   var $postsLayer = $('#posts-layer');
+  var $likesLayer = $('#likes-layer');
   var orderedLayers = [$photosLayer, $postsLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
@@ -75,6 +76,7 @@ $(function() {
 
       handlePhotos(response.photos);
       handlePosts(response.posts);
+      handleLikes(response.likes);
     });
   }
 
@@ -103,7 +105,9 @@ $(function() {
     }
   }
 
-  /// photos
+  ///
+  /// STREAMING
+  ///
 
   function handlePhotos(data) {
     if (!data) {
@@ -177,58 +181,87 @@ $(function() {
     });
   }
 
-  function renderedPhoto(photo) {
-    var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
-    return $img;
-  }
-
-  /// posts
-
   function handlePosts(data) {
     if (!data) {
       return;
     }
 
     var posts = data.data;
-    var postIndex = 0;
-    var activeRenderedPosts = [];
 
-    function doNextPost() {
-      if (postIndex >= posts.length) {
-        postIndex = 0;
+    setupDataStream(posts, renderedPost, $postsLayer);
+  }
+
+  function handleLikes(data) {
+    if (!data || !data.data) {
+      return;
+    }
+
+    setupDataStream(data.data, function() {return $('<div class="fb-element">lol</div>');}, $likesLayer);
+  }
+
+  function setupDataStream(data, renderer, $layer, options) {
+    if (!data || !renderer || !$layer) {
+      return;
+    }
+    if (!options) {
+      options = {};
+    }
+
+    var minWidth = options.minWidth || 200;
+    var widthVariance = options.widthVariance || 150;
+    var minSpeed = options.minSpeed || 4;
+    var maxSpeed = options.maxSpeed || 10;
+    var minDelay = options.minDelay || 3000;
+    var delayVariance = options.delayVariance || 5000;
+
+    var dataIndex = 0;
+    var activeRenderedElements = [];
+
+    function doNexItem() {
+      if (dataIndex >= data.length) {
+        dataIndex = 0;
       }
-      var post = posts[postIndex++];
+      var item = data[dataIndex++];
 
-      var $html = renderedPost(post);
-      var width = Math.random() * 150 + 200;
+      var $html = renderer(item);
+      var width = Math.random() * widthVariance + minWidth;
       $html.css('width', width + 'px');
       $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
       $html.css('top', '0');
-      $html._speed = kt.randInt(4, 10);
+      $html._speed = kt.randInt(minSpeed, maxSpeed);
       $html._yOffset = -500;
       updateYTranslation($html);
 
-      activeRenderedPosts.push($html);
-      $postsLayer.append($html);
+      activeRenderedElements.push($html);
+      $layer.append($html);
 
-      var delay = Math.random() * 5000 + 3000;
-      setTimeout(doNextPost, delay);
+      var delay = Math.random() * delayVariance + minDelay;
+      setTimeout(doNexItem, delay);
     }
 
-    doNextPost();
+    doNexItem();
 
-    updateFunctions.push(function updatePosts() {
-      for (var i = 0; i < activeRenderedPosts.length; i++) {
-        var $html = activeRenderedPosts[i];
+    updateFunctions.push(function updateItems() {
+      for (var i = 0; i < activeRenderedElements.length; i++) {
+        var $html = activeRenderedElements[i];
         updateYTranslation($html, $html._speed);
 
         // trim if now offscreen
-        if ($html._yOffset > window.innerHeight) {
+        if ($html._yOffset > window.innerHeight + 20) {
           $html.remove();
-          removeFromArray(activeRenderedPosts, $html);
+          removeFromArray(activeRenderedElements, $html);
         }
       }
     });
+  }
+
+  ///
+  /// RENDERING
+  ///
+
+  function renderedPhoto(photo) {
+    var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
+    return $img;
   }
 
   function renderedPost(post) {
