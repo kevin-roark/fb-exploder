@@ -168,7 +168,7 @@ $(function() {
   var $photosLayer = $('#photos-layer');
   var $postsLayer = $('#posts-layer');
   var $likesLayer = $('#likes-layer');
-  var orderedLayers = [$photosLayer, $postsLayer];
+  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -349,7 +349,7 @@ $(function() {
       return;
     }
 
-    setupDataStream(data.data, function() {return $('<div class="fb-element">lol</div>');}, $likesLayer);
+    setupDataStream(data.data, renderedLike, $likesLayer);
   }
 
   function setupDataStream(data, renderer, $layer, options) {
@@ -446,6 +446,30 @@ $(function() {
     html += '</div>'; // content
 
     html += renderedStats(post);
+
+    html += '</div></div>';
+
+    var $el = $(html);
+    return $el;
+  }
+
+  function renderedLike(like) {
+    var html = '<div class="fb-element fb-like">';
+
+    if (like.cover) {
+      html += '<img class="fb-like-cover" src="' + like.cover.source + '" />';
+    }
+
+    html += '<div class="fb-like-text-content">';
+    html += '<div class="fb-like-title">' + like.name + '</div>';
+
+    if (like.description) {
+      html += '<div class="fb-like-description">' + like.description + '</div>';
+    }
+
+    if (like.likes) {
+      html += '<div class="fb-like-likes">' + like.likes + ' likes :)</div>';
+    }
 
     html += '</div></div>';
 
