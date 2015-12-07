@@ -1,32 +1,147 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/* thanks henry */
 
-function v() {
-  return Math.floor(Math.random() * 256);
+var moment = require('moment');
+
+var fbData;
+
+module.exports.init = function _init(facebookResponse) {
+  fbData = facebookResponse;
+};
+
+module.exports.renderedPhoto = function _renderedPhoto(photo) {
+  var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
+  return $img;
+};
+
+module.exports.renderedPost = function _renderedPost(post) {
+  var html = '<div class="fb-element fb-post"><div class="fb-post-wrapper">';
+  html += '<div class="fb-post-content">';
+  html += renderedPostHeader(post);
+
+  if (post.message) html += '<div class="fb-post-message">' + post.message + '</div>';
+
+  if (post.link && post.link.indexOf('facebook') === -1) {
+    html += '<a href="' + post.link + '">';
+    if (post.picture) {
+      html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+    }
+    html += '<div class="fb-link-body">';
+    html += '<div class="fb-link">' + post.link + '</div>';
+    if (post.description) {
+      html += '<div class="fb-post-description">' + post.description + '</div>';
+    }
+    html += '</div></a>'; // link body, then a tag
+  }
+  else if (post.picture) {
+    html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+    if (post.description) {
+      html += '<div class="fb-post-description">' + post.description + '</div>';
+    }
+  }
+
+  html += '</div>'; // content
+
+  html += renderedStats(post);
+
+  html += '</div></div>';
+
+  var $el = $(html);
+  return $el;
+};
+
+module.exports.renderedLike = function _renderedLike(like) {
+  var html = '<div class="fb-element fb-like">';
+
+  if (like.cover) {
+    html += '<img class="fb-like-cover" src="' + like.cover.source + '" />';
+  }
+
+  html += '<div class="fb-like-text-content">';
+  html += '<div class="fb-like-title">' + like.name + '</div>';
+
+  if (like.description) {
+    html += '<div class="fb-like-description">' + like.description + '</div>';
+  }
+
+  if (like.likes) {
+    html += '<div class="fb-like-likes">' + like.likes + ' likes :)</div>';
+  }
+
+  html += '</div></div>';
+
+  var $el = $(html);
+  return $el;
+};
+
+/**
+  attending_count: 120
+  cover: Object
+    id: "519947678178935"
+    offset_x: 0
+    offset_y: 0
+    source: "https://scontent.xx.fbcdn.net/hphotos-xpl1/t31.0-8/s720x720/12339394_519947678178935_4828449537731342652_o.jpg"
+  declined_count: 0
+  description: ...
+  id: "629607613848785"
+  maybe_count: 138
+  name: "MALL MUSIC TAKEOVER NYC w/ DJ Paypal, DJ Mastercard, DJ Orange Julius, DJ Instant Message"
+  noreply_count: 200
+  owner: Object
+    id: "194880727261260"
+    name: "AdHoc"
+  start_time: "2016-01-22T22:00:00-0500"
+*/
+module.exports.renderedEvent = function _renderedEvent(event) {
+  var html = '<div class="fb-element fb-event">';
+  html += '<div class="fb-event-name">' + event.name + '</div>';
+  html += '<div class="fb-event-descriptipion">' + event.description + '</div>';
+  html += '</div>';
+
+  var $el = $(html);
+  return $el;
+};
+
+function renderedPostHeader(post) {
+  var html = '<div class="fb-post-header">';
+  html += '<img class="fb-post-header-picture" src="' + fbData.picture.data.url + '" />';
+  html += '<div class="fb-post-header-text">';
+  html += '<div class="fb-post-header-name">' + fbData.name + '</div>';
+  html += '<div class="fb-post-header-date">' + formattedDate(post.created_time) + '</div>';
+  html += '</div></div>'; // text, then header
+  return html;
 }
 
-module.exports.randomColor = function() {
-  return "rgb(" + v() + "," + v() + ", " + v() + ")";
-};
+function renderedStats(post) {
+  var likeCount = post.likes ? post.likes.data.length : 0;
+  var likeText = likeCount === 1 ? 'like' : 'likes';
+  var shareCount = post.shares ? post.shares.count : 0;
+  var shareText = shareCount === 1 ? 'share' : 'shares';
+  var commentCount = post.comments ? post.comments.data.length : 0;
+  var commentText = commentCount === 1 ? 'comment' : 'comments';
 
-module.exports.randomBrightColor = function() {
-  var key = Math.floor(Math.random() * 6);
+  var html = '<div class="fb-post-data">';
+  html += '<div class="fb-post-datapoint">' + likeCount + ' ' + likeText + '</div>';
+  html += '<div class="fb-post-datapoint">' + commentCount + ' ' + commentText + '</div>';
+  html += '<div class="fb-post-datapoint">' + shareCount + ' ' + shareText + '</div>';
 
-  if (key === 0)
-    return "rgb(" + "0,255," + v() + ")";
-  else if (key === 1)
-    return "rgb(" + "0," + v() + ",255)";
-  else if (key === 2)
-    return "rgb(" + "255, 0," + v() + ")";
-  else if (key === 3)
-    return "rgb(" + "255," + v() + ",0)";
-  else if (key === 4)
-    return "rgb(" + v() + ",255,0)";
-  else
-    return "rgb(" + v() + ",0,255)";
-};
+  for (var i = 0; i < commentCount; i++) {
+    var comment = post.comments.data[i];
+    html += '<div class="fb-post-comment">';
+    html += '<span class="fb-post-comment-name">' + comment.from.name + '</span>';
+    html += ' <span class="fb-post-comment-message">' + comment.message + '</span>';
+    html += ' <span class="fb-post-comment-date">' + formattedDate(comment.created_time) + '</span>';
+    html += '</div>';
+  }
 
-},{}],2:[function(require,module,exports){
+  html += '</div>';
+  return html;
+}
+
+function formattedDate(date) {
+  return moment(date).format('MMMM Do YYYY, h:mm a');
+}
+
+},{"moment":7}],2:[function(require,module,exports){
 
 var TEST_MODE = true;
 
@@ -152,13 +267,13 @@ LoadingView.prototype.stop = function() {
 
 },{}],4:[function(require,module,exports){
 
-var moment = require('moment');
 var TWEEN = require('tween.js');
 var kt = require('kutility');
 
+require('./shims');
 var fb = require('./fb');
+var fbRenderer = require('./fb-renderer');
 var LoadingView = require('./loading-view');
-var color = require('./color');
 
 $(function() {
 
@@ -168,14 +283,14 @@ $(function() {
   var $photosLayer = $('#photos-layer');
   var $postsLayer = $('#posts-layer');
   var $likesLayer = $('#likes-layer');
-  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer];
+  var $eventsLayer = $('#events-layer');
+  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer, $eventsLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
     baseText: 'CRUNCHING YOUR FACEBOOK'
   });
   var updateFunctions = [];
-  var meData;
 
   update();
 
@@ -224,12 +339,22 @@ $(function() {
 
     fb.meDump(function(response) {
       console.log(response);
-      loadingView.stop();
-      meData = response;
 
-      handlePhotos(response.photos);
-      handlePosts(response.posts);
-      handleLikes(response.likes);
+      loadingView.stop();
+      fbRenderer.init(response);
+
+      if (response.photos) {
+        handlePhotos(response.photos.data);
+      }
+      if (response.posts) {
+        handlePosts(response.posts.data);
+      }
+      if (response.likes) {
+        handleLikes(response.likes.data);
+      }
+      if (response.events) {
+        handleEvents(response.events.data);
+      }
     });
   }
 
@@ -262,12 +387,11 @@ $(function() {
   /// STREAMING
   ///
 
-  function handlePhotos(data) {
-    if (!data) {
+  function handlePhotos(photos) {
+    if (!photos) {
       return;
     }
 
-    var photos = data.data;
     var photoIndex = 0;
     var activeRenderedPhotos = [];
 
@@ -293,7 +417,7 @@ $(function() {
       var width = columnWidths[idx];
       var leftOffset = columnOffsets[idx];
 
-      var $html = renderedPhoto(photo);
+      var $html = fbRenderer.renderedPhoto(photo);
       $html.css('left', (leftOffset * 100) + '%');
       $html.css('width', (width * 100) + '%');
       $html.css('top', 0);
@@ -334,22 +458,29 @@ $(function() {
     });
   }
 
-  function handlePosts(data) {
-    if (!data) {
+  function handlePosts(posts) {
+    if (!posts) {
       return;
     }
 
-    var posts = data.data;
-
-    setupDataStream(posts, renderedPost, $postsLayer);
+    setupDataStream(posts, fbRenderer.renderedPost, $postsLayer);
   }
 
-  function handleLikes(data) {
-    if (!data || !data.data) {
+  function handleLikes(likes) {
+    if (!likes) {
       return;
     }
 
-    setupDataStream(data.data, renderedLike, $likesLayer);
+    setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
+  }
+
+
+  function handleEvents(events) {
+    if (!events) {
+      return;
+    }
+
+    setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer);
   }
 
   function setupDataStream(data, renderer, $layer, options) {
@@ -408,116 +539,9 @@ $(function() {
     });
   }
 
-  ///
-  /// RENDERING
-  ///
-
-  function renderedPhoto(photo) {
-    var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
-    return $img;
-  }
-
-  function renderedPost(post) {
-    var html = '<div class="fb-element fb-post"><div class="fb-post-wrapper">';
-    html += '<div class="fb-post-content">';
-    html += renderedPostHeader(post);
-
-    if (post.message) html += '<div class="fb-post-message">' + post.message + '</div>';
-
-    if (post.link && post.link.indexOf('facebook') === -1) {
-      html += '<a href="' + post.link + '">';
-      if (post.picture) {
-        html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
-      }
-      html += '<div class="fb-link-body">';
-      html += '<div class="fb-link">' + post.link + '</div>';
-      if (post.description) {
-        html += '<div class="fb-post-description">' + post.description + '</div>';
-      }
-      html += '</div></a>'; // link body, then a tag
-    }
-    else if (post.picture) {
-      html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
-      if (post.description) {
-        html += '<div class="fb-post-description">' + post.description + '</div>';
-      }
-    }
-
-    html += '</div>'; // content
-
-    html += renderedStats(post);
-
-    html += '</div></div>';
-
-    var $el = $(html);
-    return $el;
-  }
-
-  function renderedLike(like) {
-    var html = '<div class="fb-element fb-like">';
-
-    if (like.cover) {
-      html += '<img class="fb-like-cover" src="' + like.cover.source + '" />';
-    }
-
-    html += '<div class="fb-like-text-content">';
-    html += '<div class="fb-like-title">' + like.name + '</div>';
-
-    if (like.description) {
-      html += '<div class="fb-like-description">' + like.description + '</div>';
-    }
-
-    if (like.likes) {
-      html += '<div class="fb-like-likes">' + like.likes + ' likes :)</div>';
-    }
-
-    html += '</div></div>';
-
-    var $el = $(html);
-    return $el;
-  }
-
-  function renderedPostHeader(post) {
-    var html = '<div class="fb-post-header">';
-    html += '<img class="fb-post-header-picture" src="' + meData.picture.data.url + '" />';
-    html += '<div class="fb-post-header-text">';
-    html += '<div class="fb-post-header-name">' + meData.name + '</div>';
-    html += '<div class="fb-post-header-date">' + formattedDate(post.created_time) + '</div>';
-    html += '</div></div>'; // text, then header
-    return html;
-  }
-
-  function renderedStats(post) {
-    var likeCount = post.likes ? post.likes.data.length : 0;
-    var likeText = likeCount === 1 ? 'like' : 'likes';
-    var shareCount = post.shares ? post.shares.count : 0;
-    var shareText = shareCount === 1 ? 'share' : 'shares';
-    var commentCount = post.comments ? post.comments.data.length : 0;
-    var commentText = commentCount === 1 ? 'comment' : 'comments';
-
-    var html = '<div class="fb-post-data">';
-    html += '<div class="fb-post-datapoint">' + likeCount + ' ' + likeText + '</div>';
-    html += '<div class="fb-post-datapoint">' + commentCount + ' ' + commentText + '</div>';
-    html += '<div class="fb-post-datapoint">' + shareCount + ' ' + shareText + '</div>';
-
-    for (var i = 0; i < commentCount; i++) {
-      var comment = post.comments.data[i];
-      html += '<div class="fb-post-comment">';
-      html += '<span class="fb-post-comment-name">' + comment.from.name + '</span>';
-      html += ' <span class="fb-post-comment-message">' + comment.message + '</span>';
-      html += ' <span class="fb-post-comment-date">' + formattedDate(comment.created_time) + '</span>';
-      html += '</div>';
-    }
-
-    html += '</div>';
-    return html;
-  }
-
-  function formattedDate(date) {
-    return moment(date).format('MMMM Do YYYY, h:mm a');
-  }
-
 });
+
+},{"./fb":2,"./fb-renderer":1,"./loading-view":3,"./shims":5,"kutility":6,"tween.js":8}],5:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -545,7 +569,7 @@ $(function() {
         };
 }());
 
-},{"./color":1,"./fb":2,"./loading-view":3,"kutility":5,"moment":6,"tween.js":7}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -1119,7 +1143,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -4315,7 +4339,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js
