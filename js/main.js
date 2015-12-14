@@ -212,7 +212,7 @@ $(function() {
       return;
     }
 
-    setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer);
+    setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
   }
 
   function setupDataStream(data, renderer, $layer, options) {

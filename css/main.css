@@ -171,3 +171,52 @@ a {
     color: black;
     font-weight: bold;
   }
+
+.fb-event {
+  background-color: white;
+  border: 1px solid #bbbbbb;
+  padding: 10px;
+}
+  .fb-event-cover {
+    display: block; position: relative;
+    border: 1px solid #999999;
+    width: 33%;
+    float: left;
+  }
+    .fb-event-cover-when {
+      position: absolute; left: 12px; top: 12px;
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.9);
+    }
+      .fb-event-cover-month {
+        font-size: 11px;
+      }
+      .fb-event-cover-day {
+        font-size: 13px;
+      }
+  .fb-event-data {
+    float: left;
+    margin-left: 10px;
+    width: 60%;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+    .fb-event-name {
+      color: #3b5998;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .fb-event-when {
+      color: #4e5665;
+    }
+    .fb-event-venue {
+      color: #4e5665;
+    }
+    .fb-event-who {
+      color: #9197a3;
+    }
+    .fb-event-going-image {
+      display: block;
+      margin-left: -2px; margin-top: 2px;
+    }

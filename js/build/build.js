@@ -76,25 +76,39 @@ module.exports.renderedLike = function _renderedLike(like) {
 /**
   attending_count: 120
   cover: Object
-    id: "519947678178935"
     offset_x: 0
     offset_y: 0
     source: "https://scontent.xx.fbcdn.net/hphotos-xpl1/t31.0-8/s720x720/12339394_519947678178935_4828449537731342652_o.jpg"
   declined_count: 0
   description: ...
-  id: "629607613848785"
   maybe_count: 138
   name: "MALL MUSIC TAKEOVER NYC w/ DJ Paypal, DJ Mastercard, DJ Orange Julius, DJ Instant Message"
   noreply_count: 200
   owner: Object
-    id: "194880727261260"
     name: "AdHoc"
+  place: Object
+    name: "place name"
   start_time: "2016-01-22T22:00:00-0500"
 */
 module.exports.renderedEvent = function _renderedEvent(event) {
+  var date = moment(event.start_time);
+
   var html = '<div class="fb-element fb-event">';
-  html += '<div class="fb-event-name">' + event.name + '</div>';
-  html += '<div class="fb-event-descriptipion">' + event.description + '</div>';
+
+  // cover
+  html += '<img class="fb-event-cover" src="' + event.cover.source + '">';
+  html += div('fb-event-cover-when', div('fb-event-cover-month', date.format('MMM')) + div('fb-event-cover-day', date.format('Do')));
+  html += '</img>';
+
+  // data
+  var name = div('fb-event-name', event.name);
+  var when = div('fb-event-when', formattedDate(event.start_time));
+  var venue = div('fb-event-venue', event.place.name);
+  var who = div('fb-event-who', event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied');
+  var goingImage = '<img class="fb-event-going-image" src="/media/going.jpg" alt="Going" />';
+  html += div('fb-event-data', name + when + venue + who + goingImage);
+
+  // finisher
   html += '</div>';
 
   var $el = $(html);
@@ -139,6 +153,10 @@ function renderedStats(post) {
 
 function formattedDate(date) {
   return moment(date).format('MMMM Do YYYY, h:mm a');
+}
+
+function div(className, content) {
+  return '<div class="' + className + '">' + content + '</div>';
 }
 
 },{"moment":7}],2:[function(require,module,exports){
@@ -205,7 +223,7 @@ module.exports.meDump = function(callback) {
   var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,message_tags,likes,comments}';
   var placesField = limit('tagged_places') + '{created_time,place{name}}';
   var friendsField = limit('friends');
-  var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count}';
+  var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
   var groupsField = limit('groups') + '{cover,description,name,privacy}';
   var demographicFields = 'family{name},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover,picture';
@@ -480,7 +498,7 @@ $(function() {
       return;
     }
 
-    setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer);
+    setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
   }
 
   function setupDataStream(data, renderer, $layer, options) {
