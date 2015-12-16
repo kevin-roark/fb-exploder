@@ -56,18 +56,13 @@ module.exports.renderedLike = function _renderedLike(like) {
     html += '<img class="fb-like-cover" src="' + like.cover.source + '" />';
   }
 
-  html += '<div class="fb-like-text-content">';
-  html += '<div class="fb-like-title">' + like.name + '</div>';
+  var title = div('fb-like-title', like.name);
+  var likes = div('fb-like-likes', like.likes && like.likes > 1 ? like.likes + ' people like this.' : '1 person likes this');
+  html += div('fb-like-text-content', title + likes);
 
-  if (like.description) {
-    html += '<div class="fb-like-description">' + like.description + '</div>';
-  }
+  html += '<img class="fb-likes-liked-button" src="/media/liked.jpg" alt="liked" />';
 
-  if (like.likes) {
-    html += '<div class="fb-like-likes">' + like.likes + ' likes :)</div>';
-  }
-
-  html += '</div></div>';
+  html += '</div>';
 
   var $el = $(html);
   return $el;

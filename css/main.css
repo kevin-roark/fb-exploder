@@ -148,33 +148,36 @@ a {
 
 .fb-like {
   border: 1px solid #bbbbbb;
-  background-color: white;
+  border-radius: 3px;
 }
   .fb-like-cover {
-    display: block; width: 100%; max-height: 200px;
+    display: block; width: 100%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
   .fb-like-text-content {
+    background-color: white;
     padding: 10px;
+    font-size: 12px;
+    line-height: 1.25;
   }
   .fb-like-title {
     font-weight: bold;
   }
-  .fb-like-description {
-    margin-top: 4px;
-    font-size: 12px;
-    color: rgba(0, 0, 0, 0.75);
-  }
   .fb-like-likes {
-    margin-top: 5px;
-    margin-bottom: -2px;
-    font-size: 20px;
-    color: black;
-    font-weight: bold;
+    margin-top: 2px;
+    color: #9197a3;
+    max-width: 80%;
+  }
+  .fb-likes-liked-button {
+    display: block;
+    position: absolute; right: 10px; bottom: 10px;
+    width: 70px;
   }
 
 .fb-event {
   background-color: white;
   border: 1px solid #bbbbbb;
+  border-radius: 3px;
   padding: 10px;
 }
   .fb-event-cover {
