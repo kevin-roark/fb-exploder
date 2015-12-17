@@ -90,9 +90,9 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   var html = '<div class="fb-element fb-event">';
 
   // cover
-  html += '<img class="fb-event-cover" src="' + event.cover.source + '">';
+  html += event.cover ? '<img class="fb-event-cover" src="' + event.cover.source + '">' : '<div class="fb-event-cover">';
   html += div('fb-event-cover-when', div('fb-event-cover-month', date.format('MMM')) + div('fb-event-cover-day', date.format('Do')));
-  html += '</img>';
+  html += event.cover ? '</img>' : '</div>';
 
   // data
   var name = div('fb-event-name', event.name);
@@ -109,6 +109,13 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   return $el;
 };
 
+/**
+  created_time: "2015-05-30T19:40:54+0000"
+  id: "983592525014726"
+  place: Object
+    id: "103127603061486"
+    name: "Columbia University"
+ */
 module.exports.renderedPlace = function _renderedPlace(place) {
   var html = '<div class="fb-element fb-place">';
 
@@ -119,12 +126,39 @@ module.exports.renderedPlace = function _renderedPlace(place) {
   return $el;
 };
 
+/**
+  cover: Object
+    offset_x: 0
+    offset_y: 48
+    source: "https://scontent.xx.fbcdn.net/hphotos-xaf1/v/t1.0-9/11041818_1043629535651475_2955382725209973170_n.jpg?oh=59fa3160e3cd3f469e77eb982ae1b79f&oe=571438DF"
+  description: "..."
+  name: "WBAR DJs Spring 2015"
+  privacy: "CLOSED"
+ */
 module.exports.renderedGroup = function _renderedGroup(group) {
   var html = '<div class="fb-element fb-group">';
 
-  html += div('fb-group-name', group.name);
+  var name = div('fb-group-name', group.name);
+  var privacy = div('fb-group-privacy', group.privacy.toLowerCase() + ' group');
+  html += div('fb-group-cover-text', name + privacy);
+
+  var joined = '<img class="fb-group-joined-image" src="/media/joined.jpg"  alt="joined group" />';
+
+  if (group.cover) {
+    html += '<img class="fb-group-cover" src="' + group.cover.source + '" alt="group pic">';
+    html += joined;
+    html += '</img>';
+  }
+  else {
+    html += div('fb-group-cover', joined);
+  }
+
+  if (group.description) {
+    html += div('fb-group-description', group.description);
+  }
 
   html += '</div>';
+
   var $el = $(html);
   return $el;
 };

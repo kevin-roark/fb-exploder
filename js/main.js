@@ -25,6 +25,7 @@ $(function() {
     baseText: 'CRUNCHING YOUR FACEBOOK'
   });
   var updateFunctions = [];
+  var shouldUpdate = true;
 
   update();
 
@@ -57,6 +58,13 @@ $(function() {
       var xTranslation = ((i + 1) / orderedLayers.length) * xTranslationMagnitude;
       var yTranslation = ((i + 1) / orderedLayers.length) * yTranslationMagnitude;
       $layer.css('transform', 'translate(' + xTranslation + 'px, ' + yTranslation + 'px)');
+    }
+  });
+
+  $(document).keypress(function(ev) {
+    var key = ev.which;
+    if (key === 32) {
+      shouldUpdate = !shouldUpdate;
     }
   });
 
@@ -100,6 +108,10 @@ $(function() {
 
   function update() {
     requestAnimationFrame(update);
+
+    if (!shouldUpdate) {
+      return;
+    }
 
     TWEEN.update();
 
