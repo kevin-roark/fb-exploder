@@ -97,8 +97,8 @@ $(function() {
       if (response.events) {
         handleEvents(response.events.data);
       }
-      if (response.places) {
-        handlePlaces(response.places.data);
+      if (response.tagged_places) {
+        handlePlaces(response.tagged_places.data);
       }
       if (response.groups) {
         handleGroups(response.groups.data);

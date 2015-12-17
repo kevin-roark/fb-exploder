@@ -120,7 +120,13 @@ module.exports.renderedEvent = function _renderedEvent(event) {
 module.exports.renderedPlace = function _renderedPlace(place) {
   var html = '<div class="fb-element fb-place">';
 
-  html += div('fb-place-name', place.name);
+  html += span('fb-place-username', fbData.name);
+  html += ' checked in at ';
+  html += span('fb-place-name', place.place.name);
+  html += ' on ';
+  html += span('fb-place-when',  moment(place.created_time).format('MMMM Do YYYY'));
+  html += ' at ';
+  html += span('fb-place-when', moment(place.created_time).format('h:mm a'));
 
   html += '</div>';
   var $el = $(html);
@@ -206,6 +212,10 @@ function formattedDate(date) {
 
 function div(className, content) {
   return '<div class="' + className + '">' + content + '</div>';
+}
+
+function span(className, content) {
+  return '<span class="' + className + '">' + content + '</span>';
 }
 
 },{"moment":7}],2:[function(require,module,exports){
@@ -432,8 +442,8 @@ $(function() {
       if (response.events) {
         handleEvents(response.events.data);
       }
-      if (response.places) {
-        handlePlaces(response.places.data);
+      if (response.tagged_places) {
+        handlePlaces(response.tagged_places.data);
       }
       if (response.groups) {
         handleGroups(response.groups.data);
