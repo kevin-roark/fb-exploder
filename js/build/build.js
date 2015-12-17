@@ -110,6 +110,26 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   return $el;
 };
 
+module.exports.renderedPlace = function _renderedPlace(place) {
+  var html = '<div class="fb-element fb-place">';
+
+  html += div('fb-place-name', place.name);
+
+  html += '</div>';
+  var $el = $(html);
+  return $el;
+};
+
+module.exports.renderedGroup = function _renderedGroup(group) {
+  var html = '<div class="fb-element fb-group">';
+
+  html += div('fb-group-name', group.name);
+
+  html += '</div>';
+  var $el = $(html);
+  return $el;
+};
+
 function renderedPostHeader(post) {
   var html = '<div class="fb-post-header">';
   html += '<img class="fb-post-header-picture" src="' + fbData.picture.data.url + '" />';
@@ -297,7 +317,9 @@ $(function() {
   var $postsLayer = $('#posts-layer');
   var $likesLayer = $('#likes-layer');
   var $eventsLayer = $('#events-layer');
-  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer, $eventsLayer];
+  var $placesLayer = $('#places-layer');
+  var $groupsLayer = $('#groups-layer');
+  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -367,6 +389,12 @@ $(function() {
       }
       if (response.events) {
         handleEvents(response.events.data);
+      }
+      if (response.places) {
+        handlePlaces(response.places.data);
+      }
+      if (response.groups) {
+        handleGroups(response.groups.data);
       }
     });
   }
@@ -472,28 +500,34 @@ $(function() {
   }
 
   function handlePosts(posts) {
-    if (!posts) {
-      return;
-    }
+    if (!posts) { return; }
 
     setupDataStream(posts, fbRenderer.renderedPost, $postsLayer);
   }
 
   function handleLikes(likes) {
-    if (!likes) {
-      return;
-    }
+    if (!likes) { return; }
 
     setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
   }
 
 
   function handleEvents(events) {
-    if (!events) {
-      return;
-    }
+    if (!events) { return; }
 
     setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
+  }
+
+  function handlePlaces(places) {
+    if (!places) { return; }
+
+    setupDataStream(places, fbRenderer.renderedPlace, $placesLayer);
+  }
+
+  function handleGroups(groups) {
+    if (!groups) { return; }
+
+    setupDataStream(groups, fbRenderer.renderedGroup, $groupsLayer);
   }
 
   function setupDataStream(data, renderer, $layer, options) {

@@ -16,7 +16,9 @@ $(function() {
   var $postsLayer = $('#posts-layer');
   var $likesLayer = $('#likes-layer');
   var $eventsLayer = $('#events-layer');
-  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer, $eventsLayer];
+  var $placesLayer = $('#places-layer');
+  var $groupsLayer = $('#groups-layer');
+  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -86,6 +88,12 @@ $(function() {
       }
       if (response.events) {
         handleEvents(response.events.data);
+      }
+      if (response.places) {
+        handlePlaces(response.places.data);
+      }
+      if (response.groups) {
+        handleGroups(response.groups.data);
       }
     });
   }
@@ -191,28 +199,34 @@ $(function() {
   }
 
   function handlePosts(posts) {
-    if (!posts) {
-      return;
-    }
+    if (!posts) { return; }
 
     setupDataStream(posts, fbRenderer.renderedPost, $postsLayer);
   }
 
   function handleLikes(likes) {
-    if (!likes) {
-      return;
-    }
+    if (!likes) { return; }
 
     setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
   }
 
 
   function handleEvents(events) {
-    if (!events) {
-      return;
-    }
+    if (!events) { return; }
 
     setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
+  }
+
+  function handlePlaces(places) {
+    if (!places) { return; }
+
+    setupDataStream(places, fbRenderer.renderedPlace, $placesLayer);
+  }
+
+  function handleGroups(groups) {
+    if (!groups) { return; }
+
+    setupDataStream(groups, fbRenderer.renderedGroup, $groupsLayer);
   }
 
   function setupDataStream(data, renderer, $layer, options) {

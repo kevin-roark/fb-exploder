@@ -109,6 +109,26 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   return $el;
 };
 
+module.exports.renderedPlace = function _renderedPlace(place) {
+  var html = '<div class="fb-element fb-place">';
+
+  html += div('fb-place-name', place.name);
+
+  html += '</div>';
+  var $el = $(html);
+  return $el;
+};
+
+module.exports.renderedGroup = function _renderedGroup(group) {
+  var html = '<div class="fb-element fb-group">';
+
+  html += div('fb-group-name', group.name);
+
+  html += '</div>';
+  var $el = $(html);
+  return $el;
+};
+
 function renderedPostHeader(post) {
   var html = '<div class="fb-post-header">';
   html += '<img class="fb-post-header-picture" src="' + fbData.picture.data.url + '" />';
