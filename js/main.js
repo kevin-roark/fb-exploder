@@ -41,23 +41,16 @@ $(function() {
     var halfWidth = window.innerWidth / 2;
     var normalizedXPercent = xPercent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
 
-    var yPercent = ev.clientY / window.innerHeight;
-    var halfHeight = window.innerHeight / 2;
-    var normalizedYPercent = yPercent > 0.5 ? (ev.clientY - halfHeight) / halfHeight : (halfHeight - ev.clientY) / halfHeight;
-
     var containerRotation = xPercent * 10 - 5;
     $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
 
     var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 100;
     if (xPercent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
 
-    var yTranslationMagnitude = Math.pow(normalizedYPercent, 1) * 60;
-    if (yPercent < 0.5) yTranslationMagnitude = -yTranslationMagnitude;
-
     for (var i = 0; i < orderedLayers.length; i++) {
       var $layer = orderedLayers[i];
       var xTranslation = ((i + 1) / orderedLayers.length) * xTranslationMagnitude;
-      var yTranslation = ((i + 1) / orderedLayers.length) * yTranslationMagnitude;
+      var yTranslation = 0;
       $layer.css('transform', 'translate(' + xTranslation + 'px, ' + yTranslation + 'px)');
     }
   });
