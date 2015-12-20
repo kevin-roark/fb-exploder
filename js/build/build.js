@@ -358,12 +358,13 @@ $(function() {
 
   var $container = $('#content-container');
   var $photosLayer = $('#photos-layer');
+  var $albumsLayer = $('#albums-layer');
   var $postsLayer = $('#posts-layer');
   var $likesLayer = $('#likes-layer');
   var $eventsLayer = $('#events-layer');
   var $placesLayer = $('#places-layer');
   var $groupsLayer = $('#groups-layer');
-  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer];
+  var orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -432,6 +433,9 @@ $(function() {
 
       if (response.photos) {
         handlePhotos(response.photos.data);
+      }
+      if (response.albums) {
+        handleAlbums(response.albums.data);
       }
       if (response.posts) {
         handlePosts(response.posts.data);
@@ -553,6 +557,12 @@ $(function() {
         }
       }
     });
+  }
+
+  function handleAlbums(albums) {
+    if (!albums) { return; }
+
+
   }
 
   function handlePosts(posts) {
