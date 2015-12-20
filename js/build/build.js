@@ -486,6 +486,8 @@ $(function() {
       return;
     }
 
+    var PhotoOffscreenBuffer = 200;
+
     var photoIndex = 0;
     var activeRenderedPhotos = [];
 
@@ -518,7 +520,7 @@ $(function() {
 
       $html._columnIndex = idx;
       $html._renderedHeight = (photo.height / photo.width) * width; // unit is decimal percentage of window width
-      $html._yOffset = -($html._renderedHeight * window.innerWidth);
+      $html._yOffset = -($html._renderedHeight * window.innerWidth) - PhotoOffscreenBuffer;
       updateYTranslation($html);
 
       activeRenderedPhotos.push($html);
@@ -538,7 +540,7 @@ $(function() {
         updateYTranslation($html, speed);
 
         // add a new guy if necessary
-        if ($html._yOffset > 0 && !$html._hasBecomeVisible) {
+        if ($html._yOffset > -PhotoOffscreenBuffer && !$html._hasBecomeVisible) {
           addPhotoToColumn($html._columnIndex);
           $html._hasBecomeVisible = true;
         }
