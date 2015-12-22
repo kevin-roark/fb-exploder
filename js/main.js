@@ -47,7 +47,7 @@ $(function() {
     var halfWidth = window.innerWidth / 2;
     var normalizedXPercent = xPercent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
 
-    var containerRotation = xPercent * 10 - 5;
+    var containerRotation = 0; //xPercent * 10 - 5;
     $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
 
     var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 100;
@@ -55,7 +55,7 @@ $(function() {
 
     for (var i = 0; i < orderedLayers.length; i++) {
       var $layer = orderedLayers[i];
-      var xTranslation = ((i + 1) / orderedLayers.length) * xTranslationMagnitude;
+      var xTranslation = (i / (orderedLayers.length - 1)) * xTranslationMagnitude;
       var yTranslation = 0;
       $layer.css('transform', 'translate(' + xTranslation + 'px, ' + yTranslation + 'px)');
     }
@@ -306,6 +306,44 @@ $(function() {
         }
       }
     });
+  }
+
+  /**
+    fbData
+      age_range
+        min
+        max
+      bio
+      education
+        0
+          school
+            name
+          type
+          year
+            name
+      family
+        data
+          0
+            name
+            family
+      hometown
+        name
+      location
+        name
+      relationship_status
+      work
+        0
+          employer
+            name
+          end_date
+          start_date
+          location
+            name
+          position
+            name
+   */
+  function setupDemographicStream(fbData) {
+
   }
 
 });

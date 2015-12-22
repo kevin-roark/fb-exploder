@@ -64,7 +64,7 @@ module.exports.meDump = function(callback) {
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
   var groupsField = limit('groups') + '{cover,description,name,privacy}';
-  var demographicFields = 'family{name},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover,picture';
+  var demographicFields = 'family{name,relationship},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover,picture';
   var combinedFields = [
     photosField,
     albumsField,
