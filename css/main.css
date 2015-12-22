@@ -16,6 +16,9 @@ a {
   color: rgba(0, 125, 255, 0.87);
   text-decoration: none;
 }
+  a:hover, a:focus {
+    text-decoration: underline;
+  }
 
 .welcome-container {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -45,6 +48,13 @@ a {
   }
     #facebook-login-button:hover {
       background-color: #6b9dff;
+    }
+  .subsidiaries {
+    position: absolute; bottom: 15px; right: 15px;
+    line-height: 1.3; text-align: right;
+  }
+    .subsidiaries a:hover, .subsidiaries a:focus {
+      font-style: italic;
     }
 
 #loading-view {
