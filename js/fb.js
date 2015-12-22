@@ -31,7 +31,6 @@ module.exports.login = function(callback) {
     'user_friends',
     'user_likes',
     'user_posts',
-    'user_managed_groups',
     'user_about_me',
     'user_birthday',
     'user_relationships',

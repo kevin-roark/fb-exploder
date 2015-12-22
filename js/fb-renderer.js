@@ -8,8 +8,21 @@ module.exports.init = function _init(facebookResponse) {
 };
 
 module.exports.renderedPhoto = function _renderedPhoto(photo) {
-  var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
+  var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '"/>');
   return $img;
+};
+
+module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo) {
+  var html = '<div class="fb-element fb-photo">';
+
+  html += '<img class="fb-album-photo" src="' + photo.picture + '"/>';
+
+  if (photo.name && photo.name.length > 0) {
+    html += div('fb-photo-caption', photo.name);
+  }
+
+  html += '</div>';
+  return $(html);
 };
 
 module.exports.renderedPost = function _renderedPost(post) {

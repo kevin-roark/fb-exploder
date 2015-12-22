@@ -9,8 +9,21 @@ module.exports.init = function _init(facebookResponse) {
 };
 
 module.exports.renderedPhoto = function _renderedPhoto(photo) {
-  var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '""/>');
+  var $img = $('<img class="fb-element fb-photo" src="' + photo.picture + '"/>');
   return $img;
+};
+
+module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo) {
+  var html = '<div class="fb-element fb-photo">';
+
+  html += '<img class="fb-album-photo" src="' + photo.picture + '"/>';
+
+  if (photo.name && photo.name.length > 0) {
+    html += div('fb-photo-caption', photo.name);
+  }
+
+  html += '</div>';
+  return $(html);
 };
 
 module.exports.renderedPost = function _renderedPost(post) {
@@ -252,7 +265,6 @@ module.exports.login = function(callback) {
     'user_friends',
     'user_likes',
     'user_posts',
-    'user_managed_groups',
     'user_about_me',
     'user_birthday',
     'user_relationships',
@@ -1296,7 +1308,24 @@ $(function() {
   function handleAlbums(albums) {
     if (!albums) { return; }
 
+    // gather the photos
+    var albumPhotos = [];
+    for (var i = 0; i < albums.length; i++) {
+      var album = albums[i];
+      if (!album.photos) { continue; }
 
+      var photos = album.photos.data;
+      for (var j = 0; j < photos.length; j++) {
+        albumPhotos.push(photos[j]);
+      }
+    }
+
+    setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
+      minWidth: 100,
+      widthVariance: 350,
+      minDelay: 400,
+      delayVariance: 1000
+    });
   }
 
   function handlePosts(posts) {
@@ -1349,6 +1378,13 @@ $(function() {
     var activeRenderedElements = [];
 
     function doNexItem() {
+      var delay = Math.random() * delayVariance + minDelay;
+      setTimeout(doNexItem, delay);
+
+      if (!shouldUpdate) {
+        return;
+      }
+
       if (dataIndex >= data.length) {
         dataIndex = 0;
       }
@@ -1365,9 +1401,6 @@ $(function() {
 
       activeRenderedElements.push($html);
       $layer.append($html);
-
-      var delay = Math.random() * delayVariance + minDelay;
-      setTimeout(doNexItem, delay);
     }
 
     doNexItem();
