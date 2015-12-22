@@ -220,7 +220,24 @@ $(function() {
   function handleAlbums(albums) {
     if (!albums) { return; }
 
+    // gather the photos
+    var albumPhotos = [];
+    for (var i = 0; i < albums.length; i++) {
+      var album = albums[i];
+      if (!album.photos) { continue; }
 
+      var photos = album.photos.data;
+      for (var j = 0; j < photos.length; j++) {
+        albumPhotos.push(photos[j]);
+      }
+    }
+
+    setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
+      minWidth: 100,
+      widthVariance: 350,
+      minDelay: 400,
+      delayVariance: 1000
+    });
   }
 
   function handlePosts(posts) {
@@ -273,6 +290,13 @@ $(function() {
     var activeRenderedElements = [];
 
     function doNexItem() {
+      var delay = Math.random() * delayVariance + minDelay;
+      setTimeout(doNexItem, delay);
+
+      if (!shouldUpdate) {
+        return;
+      }
+
       if (dataIndex >= data.length) {
         dataIndex = 0;
       }
@@ -289,9 +313,6 @@ $(function() {
 
       activeRenderedElements.push($html);
       $layer.append($html);
-
-      var delay = Math.random() * delayVariance + minDelay;
-      setTimeout(doNexItem, delay);
     }
 
     doNexItem();
