@@ -24,7 +24,7 @@ $(function() {
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
-    baseText: 'CRUNCHING YOUR FACEBOOK'
+    baseText: 'Gathering your Facebook data'
   });
   var friendsSound = new buzz.sound('/media/friends', {
     formats: ['mp3'],
@@ -37,7 +37,7 @@ $(function() {
 
   fb.init(function() {
     friendsSound.loop().play();
-    $facebookLoginButton.fadeIn();
+    $facebookLoginButton.animate({opacity: 1}, 500);
   });
 
   $(window).mousemove(function(ev) {
@@ -75,7 +75,7 @@ $(function() {
   });
 
   function didLogin() {
-    $('#welcome-container').fadeOut(1000);
+    $('.welcome-container').fadeOut();
 
     loadingView.start();
 
