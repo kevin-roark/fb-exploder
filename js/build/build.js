@@ -1096,7 +1096,7 @@ $(function() {
   var $eventsLayer = $('#events-layer');
   var $placesLayer = $('#places-layer');
   var $groupsLayer = $('#groups-layer');
-  var orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer];
+  var orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -1179,9 +1179,11 @@ $(function() {
       if (response.tagged_places) {
         handlePlaces(response.tagged_places.data);
       }
-      if (response.groups) {
-        handleGroups(response.groups.data);
-      }
+
+      // TODO: request groups access
+      // if (response.groups) {
+      //   handleGroups(response.groups.data);
+      // }
     });
   }
 
@@ -1229,7 +1231,7 @@ $(function() {
     var activeRenderedPhotos = [];
 
     var columnWidths = kt.shuffle([0.3, 0.2, 0.15, 0.15, 0.1, 0.05, 0.05]);
-    var columnSpeeds = kt.shuffle([1, 2, 2, 2, 3, 3, 4]);
+    var columnSpeeds = kt.shuffle([2, 2, 2, 3, 3, 4, 5]);
     var columnOffsets = [0];
     for (var offsetIndex = 1; offsetIndex < columnWidths.length; offsetIndex++) {
       var accumlatedOffset = columnOffsets[offsetIndex - 1];
