@@ -1,6 +1,7 @@
 
 var TWEEN = require('tween.js');
 var kt = require('kutility');
+var buzz = require('./lib/buzz');
 
 require('./shims');
 var fb = require('./fb');
@@ -13,16 +14,21 @@ $(function() {
 
   var $container = $('#content-container');
   var $photosLayer = $('#photos-layer');
+  var $albumsLayer = $('#albums-layer');
   var $postsLayer = $('#posts-layer');
   var $likesLayer = $('#likes-layer');
   var $eventsLayer = $('#events-layer');
   var $placesLayer = $('#places-layer');
   var $groupsLayer = $('#groups-layer');
-  var orderedLayers = [$photosLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer];
+  var orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
-    baseText: 'CRUNCHING YOUR FACEBOOK'
+    baseText: 'Gathering your Facebook data'
+  });
+  var friendsSound = new buzz.sound('/media/friends', {
+    formats: ['mp3'],
+    webAudioApi: true
   });
   var updateFunctions = [];
   var shouldUpdate = true;
@@ -30,7 +36,8 @@ $(function() {
   update();
 
   fb.init(function() {
-    $facebookLoginButton.fadeIn();
+    friendsSound.loop().play();
+    $facebookLoginButton.animate({opacity: 1}, 500);
   });
 
   $(window).mousemove(function(ev) {
@@ -40,23 +47,16 @@ $(function() {
     var halfWidth = window.innerWidth / 2;
     var normalizedXPercent = xPercent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
 
-    var yPercent = ev.clientY / window.innerHeight;
-    var halfHeight = window.innerHeight / 2;
-    var normalizedYPercent = yPercent > 0.5 ? (ev.clientY - halfHeight) / halfHeight : (halfHeight - ev.clientY) / halfHeight;
-
-    var containerRotation = xPercent * 10 - 5;
+    var containerRotation = 0; //xPercent * 10 - 5;
     $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
 
     var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 100;
     if (xPercent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
 
-    var yTranslationMagnitude = Math.pow(normalizedYPercent, 1) * 60;
-    if (yPercent < 0.5) yTranslationMagnitude = -yTranslationMagnitude;
-
     for (var i = 0; i < orderedLayers.length; i++) {
       var $layer = orderedLayers[i];
-      var xTranslation = ((i + 1) / orderedLayers.length) * xTranslationMagnitude;
-      var yTranslation = ((i + 1) / orderedLayers.length) * yTranslationMagnitude;
+      var xTranslation = (i / (orderedLayers.length - 1)) * xTranslationMagnitude;
+      var yTranslation = 0;
       $layer.css('transform', 'translate(' + xTranslation + 'px, ' + yTranslation + 'px)');
     }
   });
@@ -75,7 +75,7 @@ $(function() {
   });
 
   function didLogin() {
-    $('#welcome-container').fadeOut(1000);
+    $('.welcome-container').fadeOut();
 
     loadingView.start();
 
@@ -87,6 +87,9 @@ $(function() {
 
       if (response.photos) {
         handlePhotos(response.photos.data);
+      }
+      if (response.albums) {
+        handleAlbums(response.albums.data);
       }
       if (response.posts) {
         handlePosts(response.posts.data);
@@ -144,6 +147,8 @@ $(function() {
       return;
     }
 
+    var PhotoOffscreenBuffer = 200;
+
     var photoIndex = 0;
     var activeRenderedPhotos = [];
 
@@ -176,7 +181,7 @@ $(function() {
 
       $html._columnIndex = idx;
       $html._renderedHeight = (photo.height / photo.width) * width; // unit is decimal percentage of window width
-      $html._yOffset = -($html._renderedHeight * window.innerWidth);
+      $html._yOffset = -($html._renderedHeight * window.innerWidth) - PhotoOffscreenBuffer;
       updateYTranslation($html);
 
       activeRenderedPhotos.push($html);
@@ -196,7 +201,7 @@ $(function() {
         updateYTranslation($html, speed);
 
         // add a new guy if necessary
-        if ($html._yOffset > 0 && !$html._hasBecomeVisible) {
+        if ($html._yOffset > -PhotoOffscreenBuffer && !$html._hasBecomeVisible) {
           addPhotoToColumn($html._columnIndex);
           $html._hasBecomeVisible = true;
         }
@@ -208,6 +213,12 @@ $(function() {
         }
       }
     });
+  }
+
+  function handleAlbums(albums) {
+    if (!albums) { return; }
+
+
   }
 
   function handlePosts(posts) {
@@ -295,6 +306,44 @@ $(function() {
         }
       }
     });
+  }
+
+  /**
+    fbData
+      age_range
+        min
+        max
+      bio
+      education
+        0
+          school
+            name
+          type
+          year
+            name
+      family
+        data
+          0
+            name
+            family
+      hometown
+        name
+      location
+        name
+      relationship_status
+      work
+        0
+          employer
+            name
+          end_date
+          start_date
+          location
+            name
+          position
+            name
+   */
+  function setupDemographicStream(fbData) {
+
   }
 
 });

@@ -17,16 +17,43 @@ a {
   text-decoration: none;
 }
 
-#facebook-login-button {
-  display: none;
-}
-
-#welcome-container {
+.welcome-container {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  text-align: center;
+  font-family: "Times New Roman", serif;
 }
+  .app-welcome {
+    margin-top: 60px;
+  }
+  .app-title {
+    margin-top: 20px;
+    font-size: 32px;
+  }
+  .shadow-button {
+    display: inline-block; margin: 30px; padding: 10px;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+  }
+    .shadow-button:hover, .shadow-button:focus {
+      box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+      text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+    }
+  #facebook-login-button {
+    opacity: 0;
+    font-size: 20px;
+    background-color: #5890ff; color: rgba(255, 255, 255, 0.95);
+  }
+    #facebook-login-button:hover {
+      background-color: #6b9dff;
+    }
 
 #loading-view {
   display: none;
+  position: absolute; top: 0; left: 0; width: 100%;
+  margin-top: 60px;
+  text-align: center;
+  font-family: "Times New Roman", serif;
+  font-size: 24px;
 }
 
 #content-container {
