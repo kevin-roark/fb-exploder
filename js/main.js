@@ -1,6 +1,7 @@
 
 var TWEEN = require('tween.js');
 var kt = require('kutility');
+var buzz = require('./lib/buzz');
 
 require('./shims');
 var fb = require('./fb');
@@ -25,12 +26,17 @@ $(function() {
     $el: $('#loading-view'),
     baseText: 'CRUNCHING YOUR FACEBOOK'
   });
+  var friendsSound = new buzz.sound('/media/friends', {
+    formats: ['mp3'],
+    webAudioApi: true
+  });
   var updateFunctions = [];
   var shouldUpdate = true;
 
   update();
 
   fb.init(function() {
+    friendsSound.loop().play();
     $facebookLoginButton.fadeIn();
   });
 
