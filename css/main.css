@@ -329,3 +329,12 @@ a {
     font-size: 12px;
     white-space: pre-line;
   }
+
+.fb-demographic-text {
+  font-family: "Times New Roman", serif;
+  padding: 7px;
+  box-shadow: none;
+}
+  .fb-demographic-text:hover {
+    background-color: white;
+  }

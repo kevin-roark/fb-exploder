@@ -1,5 +1,6 @@
 
 var moment = require('moment');
+var kt = require('kutility');
 
 var fbData;
 
@@ -179,6 +180,18 @@ module.exports.renderedGroup = function _renderedGroup(group) {
   html += '</div>';
 
   var $el = $(html);
+  return $el;
+};
+
+module.exports.renderedDemographicText = function _renderedDemographicText(text) {
+  var html = div('fb-element fb-demographic-text', text);
+
+  var $el =  $(html);
+  $el.css('font-size', kt.randInt(24, 48) + 'px');
+  if (Math.random() < 0.75) {
+    $el.css('font-weight', 'bold');
+  }
+
   return $el;
 };
 
