@@ -2,6 +2,7 @@
 var TWEEN = require('tween.js');
 var kt = require('kutility');
 var buzz = require('./lib/buzz');
+var moment = require('moment');
 
 require('./shims');
 var fb = require('./fb');
@@ -20,7 +21,8 @@ $(function() {
   var $eventsLayer = $('#events-layer');
   var $placesLayer = $('#places-layer');
   var $groupsLayer = $('#groups-layer');
-  var orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer];
+  var $demographicLayer = $('#demographic-layer');
+  var orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $demographicLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
@@ -103,6 +105,7 @@ $(function() {
       if (response.tagged_places) {
         handlePlaces(response.tagged_places.data);
       }
+      setupDemographicStream(response);
 
       // TODO: request groups access
       // if (response.groups) {
@@ -331,42 +334,72 @@ $(function() {
     });
   }
 
-  /**
-    fbData
-      age_range
-        min
-        max
-      bio
-      education
-        0
-          school
-            name
-          type
-          year
-            name
-      family
-        data
-          0
-            name
-            family
-      hometown
-        name
-      location
-        name
-      relationship_status
-      work
-        0
-          employer
-            name
-          end_date
-          start_date
-          location
-            name
-          position
-            name
-   */
   function setupDemographicStream(fbData) {
+    var demographicText = [];
 
+    if (fbData.age_range.min) {
+      demographicText.push(fbData.name + ' is at least ' + fbData.age_range.min + ' years old');
+    }
+
+    if (fbData.bio) {
+      demographicText.push(fbData.name + "'s bio: " + fbData.bio);
+    }
+
+    if (fbData.birthday) {
+      demographicText.push(fbData.name + ' was born on ' + fbData.birthday);
+    }
+
+    if (fbData.education) {
+      fbData.education.forEach(function(education) {
+        var text = fbData.name + ' attended ' + education.school.name;
+        if (education.year) { text += ' until ' + education.year.name; }
+        demographicText.push(text);
+      });
+    }
+
+    if (fbData.family && fbData.family.data) {
+      fbData.family.data.forEach(function(family) {
+        demographicText.push(family.name + ' is ' + fbData.name + "'s " + family.relationship);
+      });
+    }
+
+    if (fbData.hometown) {
+      demographicText.push(fbData.hometown + ' is ' + fbData.name + "'s hometown");
+    }
+
+    if (fbData.location) {
+      demographicText.push(fbData.name + ' lives in ' + fbData.location.name);
+    }
+
+    if (fbData.relationship_status) {
+      demographicText.push(fbData.name + ' is ' + fbData.relationship_status);
+    }
+
+    if (fbData.work) {
+      fbData.work.forEach(function(work) {
+        var text = fbData.name + ' worked at ' + work.employer.name;
+        if (work.location) { text += ' at ' + work.location.name; }
+        if (work.position) { text += ' with the title of ' + work.position.name; }
+        if (work.start_date || work.end_date) {
+          var start = work.start_date ? moment(work.start_date).format('MMMM YYYY') : null;
+          var end = work.end_date ? moment(work.end_date).format('MMMM YYYY') : null;
+          if (start && end) {
+            text += ' from ' + start + ' until ' + end;
+          }
+          else if (start) {
+            text += ', starting on ' + start;
+          }
+          else {
+            text += ' until ' + end;
+          }
+        }
+        demographicText.push(text);
+      });
+    }
+
+    demographicText = kt.shuffle(demographicText);
+
+    setupDataStream(demographicText, fbRenderer.renderedDemographicText, $demographicLayer);
   }
 
 });
