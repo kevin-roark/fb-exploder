@@ -1110,6 +1110,10 @@ var fb = require('./fb');
 var fbRenderer = require('./fb-renderer');
 var LoadingView = require('./loading-view');
 
+var DelayBeforePhotoWaterfall = 6666;
+var DelayBeforeDataWaterfall = 15666;
+var DelayBeforeDemographicWaterfall = 30000;
+
 $(function() {
 
   /// state
@@ -1188,30 +1192,38 @@ $(function() {
       loadingView.stop();
       fbRenderer.init(response);
 
-      if (response.photos) {
-        handlePhotos(response.photos.data);
-      }
       if (response.albums) {
         handleAlbums(response.albums.data);
       }
-      if (response.posts) {
-        handlePosts(response.posts.data);
-      }
-      if (response.likes) {
-        handleLikes(response.likes.data);
-      }
-      if (response.events) {
-        handleEvents(response.events.data);
-      }
-      if (response.tagged_places) {
-        handlePlaces(response.tagged_places.data);
-      }
-      setupDemographicStream(response);
 
-      // TODO: request groups access
-      // if (response.groups) {
-      //   handleGroups(response.groups.data);
-      // }
+      setTimeout(function() {
+        if (response.photos) {
+          handlePhotos(response.photos.data);
+        }
+      }, DelayBeforePhotoWaterfall);
+
+      setTimeout(function() {
+        if (response.posts) {
+          handlePosts(response.posts.data);
+        }
+        if (response.likes) {
+          handleLikes(response.likes.data);
+        }
+        if (response.events) {
+          handleEvents(response.events.data);
+        }
+        if (response.tagged_places) {
+          handlePlaces(response.tagged_places.data);
+        }
+        // TODO: request groups access
+        // if (response.groups) {
+        //   handleGroups(response.groups.data);
+        // }
+      }, DelayBeforeDataWaterfall);
+
+      setTimeout(function() {
+        setupDemographicStream(response);
+      }, DelayBeforeDemographicWaterfall);
     });
   }
 
