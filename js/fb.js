@@ -55,9 +55,9 @@ module.exports.meDump = function(callback) {
     return field + '.limit(' + count + ')';
   }
 
-  var photosField = limit('photos') + '{width,height,name,updated_time,picture,comments,tags,likes}';
+  var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
-  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,message_tags,likes,comments}';
+  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
   var placesField = limit('tagged_places') + '{created_time,place{name}}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';

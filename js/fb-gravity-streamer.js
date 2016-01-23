@@ -27,7 +27,7 @@ var shouldUpdate = true;
 
 /// Public
 
-module.exports.startWithFacebookDump = function _startWithFacebookDump(dump) {
+module.exports.start = function _start(dump) {
   if (dump.albums) {
     handleAlbums(dump.albums.data);
   }

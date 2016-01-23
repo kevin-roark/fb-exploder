@@ -5,8 +5,13 @@ var buzz = require('./lib/buzz');
 require('./shims');
 var fb = require('./fb');
 var fbRenderer = require('./fb-renderer');
-var fbGravityStreamer = require('./fb-gravity-streamer');
 var LoadingView = require('./loading-view');
+var fbGravityStreamer = require('./fb-gravity-streamer');
+var fbPopularityCalculator = require('./fb-popularity-calculator');
+
+var HELLO_STATE = 0;
+var POPULARITY_STATE = 1;
+var GRAVITY_STATE = 2;
 
 $(function() {
 
@@ -22,6 +27,7 @@ $(function() {
     webAudioApi: true
   });
   var shouldUpdate = true;
+  var currentState = HELLO_STATE;
 
   update();
 
@@ -31,14 +37,19 @@ $(function() {
   });
 
   $(window).mousemove(function(ev) {
-    fbGravityStreamer.mouseUpdate(ev.clientX, ev.clientY);
+    if (currentState === GRAVITY_STATE) {
+      fbGravityStreamer.mouseUpdate(ev.clientX, ev.clientY);
+    }
   });
 
   $(document).keypress(function(ev) {
     var key = ev.which;
     if (key === 32) {
       shouldUpdate = !shouldUpdate;
-      fbGravityStreamer.setShouldUpdate(shouldUpdate);
+
+      if (currentState === GRAVITY_STATE) {
+        fbGravityStreamer.setShouldUpdate(shouldUpdate);
+      }
     }
   });
 
@@ -58,7 +69,12 @@ $(function() {
 
       loadingView.stop();
       fbRenderer.init(response);
-      fbGravityStreamer.startWithFacebookDump(response);
+      currentState = POPULARITY_STATE;
+
+      fbPopularityCalculator.start(response, function finishedPopularity() {
+        currentState = GRAVITY_STATE;
+        fbGravityStreamer.start(response);
+      });
     });
   }
 
@@ -71,7 +87,9 @@ $(function() {
 
     TWEEN.update();
 
-    fbGravityStreamer.update();
+    if (currentState === GRAVITY_STATE) {
+      fbGravityStreamer.update();
+    }
   }
 
 });

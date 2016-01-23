@@ -206,11 +206,11 @@ function renderedPostHeader(post) {
 }
 
 function renderedStats(post) {
-  var likeCount = post.likes ? post.likes.data.length : 0;
+  var likeCount = post.likes && post.likes.summary ? post.likes.summary.total_count : 0;
   var likeText = likeCount === 1 ? 'like' : 'likes';
   var shareCount = post.shares ? post.shares.count : 0;
   var shareText = shareCount === 1 ? 'share' : 'shares';
-  var commentCount = post.comments ? post.comments.data.length : 0;
+  var commentCount = post.comments && post.comments.summary ? post.comments.summary.total_count : 0;
   var commentText = commentCount === 1 ? 'comment' : 'comments';
 
   var html = '<div class="fb-post-data">';

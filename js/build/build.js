@@ -28,7 +28,7 @@ var shouldUpdate = true;
 
 /// Public
 
-module.exports.startWithFacebookDump = function _startWithFacebookDump(dump) {
+module.exports.start = function _start(dump) {
   if (dump.albums) {
     handleAlbums(dump.albums.data);
   }
@@ -371,7 +371,62 @@ function removeFromArray(arr, el) {
   }
 }
 
-},{"./fb-renderer":2,"kutility":8,"moment":9}],2:[function(require,module,exports){
+},{"./fb-renderer":3,"kutility":9,"moment":10}],2:[function(require,module,exports){
+
+var PiecesToShow = 3;
+var LikeValue = 1;
+var CommentValue = 2;
+var ShareValue = 3;
+
+/// Public
+
+module.exports.start = function _start(dump, finishedCallback) {
+  var bestPhotos = dump.photos ? calculateBestElements(dump.photos.data, calculateStandardPoints) : [];
+  var bestPosts = dump.posts ? calculateBestElements(dump.posts.data, calculateStandardPoints) : [];
+  var bestLikes = dump.likes ? calculateBestElements(dump.likes.data, calculateLikePoints) : [];
+  var bestEvents = dump.events ? calculateBestElements(dump.events.data, calculateEventPoints) : [];
+
+  console.log({photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents});
+
+  if (finishedCallback) {
+    finishedCallback();
+  }
+};
+
+/// Private
+
+function calculateBestElements(elements, pointCalculator) {
+  if (!elements) return [];
+
+  // sort elements in descending order by points
+  var sortedElements = elements.sort(function(a, b) {
+    return pointCalculator(b) - pointCalculator(a);
+  });
+
+  return sortedElements.slice(0, PiecesToShow);
+}
+
+function calculateStandardPoints(item) {
+  var stats = calculateStats(item);
+  var likePoints = stats.likes * LikeValue;
+  var sharePoints = stats.shares * ShareValue;
+  var commentPoints = stats.comments * CommentValue;
+  return likePoints + sharePoints + commentPoints;
+}
+
+function calculateLikePoints(like) { return like.likes; }
+
+function calculateEventPoints(event) { return event.attending_count ? event.attending_count : 0; }
+
+function calculateStats(item) {
+  return {
+    likes: item.likes && item.likes.summary ? item.likes.summary.total_count : 0,
+    shares: item.shares ? item.shares.count : 0,
+    comments: item.comments && item.comments.summary ? item.comments.summary.total_count : 0
+  };
+}
+
+},{}],3:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');
@@ -580,11 +635,11 @@ function renderedPostHeader(post) {
 }
 
 function renderedStats(post) {
-  var likeCount = post.likes ? post.likes.data.length : 0;
+  var likeCount = post.likes && post.likes.summary ? post.likes.summary.total_count : 0;
   var likeText = likeCount === 1 ? 'like' : 'likes';
   var shareCount = post.shares ? post.shares.count : 0;
   var shareText = shareCount === 1 ? 'share' : 'shares';
-  var commentCount = post.comments ? post.comments.data.length : 0;
+  var commentCount = post.comments && post.comments.summary ? post.comments.summary.total_count : 0;
   var commentText = commentCount === 1 ? 'comment' : 'comments';
 
   var html = '<div class="fb-post-data">';
@@ -617,7 +672,7 @@ function span(className, content) {
   return '<span class="' + className + '">' + content + '</span>';
 }
 
-},{"kutility":8,"moment":9}],3:[function(require,module,exports){
+},{"kutility":9,"moment":10}],4:[function(require,module,exports){
 
 var TEST_MODE = true;
 
@@ -675,9 +730,9 @@ module.exports.meDump = function(callback) {
     return field + '.limit(' + count + ')';
   }
 
-  var photosField = limit('photos') + '{width,height,name,updated_time,picture,comments,tags,likes}';
+  var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
-  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,message_tags,likes,comments}';
+  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
   var placesField = limit('tagged_places') + '{created_time,place{name}}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
@@ -698,7 +753,7 @@ module.exports.meDump = function(callback) {
   api('/me?fields=' + combinedFields, callback);
 };
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
  // ----------------------------------------------------------------------------
  // Buzz, a Javascript HTML5 Audio library
  // v1.1.10 - Built 2015-04-20 13:05
@@ -1429,7 +1484,7 @@ module.exports.meDump = function(callback) {
     };
     return buzz;
 });
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 
 module.exports = LoadingView;
 
@@ -1471,7 +1526,7 @@ LoadingView.prototype.stop = function() {
   this.$el.fadeOut();
 };
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 
 var TWEEN = require('tween.js');
 var buzz = require('./lib/buzz');
@@ -1479,8 +1534,13 @@ var buzz = require('./lib/buzz');
 require('./shims');
 var fb = require('./fb');
 var fbRenderer = require('./fb-renderer');
-var fbGravityStreamer = require('./fb-gravity-streamer');
 var LoadingView = require('./loading-view');
+var fbGravityStreamer = require('./fb-gravity-streamer');
+var fbPopularityCalculator = require('./fb-popularity-calculator');
+
+var HELLO_STATE = 0;
+var POPULARITY_STATE = 1;
+var GRAVITY_STATE = 2;
 
 $(function() {
 
@@ -1496,6 +1556,7 @@ $(function() {
     webAudioApi: true
   });
   var shouldUpdate = true;
+  var currentState = HELLO_STATE;
 
   update();
 
@@ -1505,14 +1566,19 @@ $(function() {
   });
 
   $(window).mousemove(function(ev) {
-    fbGravityStreamer.mouseUpdate(ev.clientX, ev.clientY);
+    if (currentState === GRAVITY_STATE) {
+      fbGravityStreamer.mouseUpdate(ev.clientX, ev.clientY);
+    }
   });
 
   $(document).keypress(function(ev) {
     var key = ev.which;
     if (key === 32) {
       shouldUpdate = !shouldUpdate;
-      fbGravityStreamer.setShouldUpdate(shouldUpdate);
+
+      if (currentState === GRAVITY_STATE) {
+        fbGravityStreamer.setShouldUpdate(shouldUpdate);
+      }
     }
   });
 
@@ -1532,7 +1598,12 @@ $(function() {
 
       loadingView.stop();
       fbRenderer.init(response);
-      fbGravityStreamer.startWithFacebookDump(response);
+      currentState = POPULARITY_STATE;
+
+      fbPopularityCalculator.start(response, function finishedPopularity() {
+        currentState = GRAVITY_STATE;
+        fbGravityStreamer.start(response);
+      });
     });
   }
 
@@ -1545,12 +1616,14 @@ $(function() {
 
     TWEEN.update();
 
-    fbGravityStreamer.update();
+    if (currentState === GRAVITY_STATE) {
+      fbGravityStreamer.update();
+    }
   }
 
 });
 
-},{"./fb":3,"./fb-gravity-streamer":1,"./fb-renderer":2,"./lib/buzz":4,"./loading-view":5,"./shims":7,"tween.js":10}],7:[function(require,module,exports){
+},{"./fb":4,"./fb-gravity-streamer":1,"./fb-popularity-calculator":2,"./fb-renderer":3,"./lib/buzz":5,"./loading-view":6,"./shims":8,"tween.js":11}],8:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -1578,7 +1651,7 @@ $(function() {
         };
 }());
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -2152,7 +2225,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -5348,7 +5421,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js
@@ -6224,4 +6297,4 @@ TWEEN.Interpolation = {
 
 })(this);
 
-},{}]},{},[6]);
+},{}]},{},[7]);
