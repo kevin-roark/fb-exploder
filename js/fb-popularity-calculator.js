@@ -27,7 +27,25 @@ module.exports.start = function _start(dump, finishedCallback) {
   var $bestPhotos = renderedBestPhotos(bestPhotos);
   $popularityZone.append($bestPhotos);
 
+  var $bestPosts = renderedBestPosts(bestPosts);
+  $popularityZone.append($bestPosts);
+
+  var $bestEvents = renderedBestEvents(bestEvents);
+  $popularityZone.append($bestEvents);
+
+  var $bestLikes = renderedBestLikes(bestLikes);
+  $popularityZone.append($bestLikes);
+
   $bestPhotos.animate({opacity: 1}, 2000);
+  setTimeout(function() {
+    $bestPosts.animate({opacity: 1}, 2000);
+  }, 5000);
+  setTimeout(function() {
+    $bestEvents.animate({opacity: 1}, 2000);
+  }, 10000);
+  setTimeout(function() {
+    $bestLikes.animate({opacity: 1}, 2000);
+  }, 15000);
 
   setTimeout(finishedCallback, 30000);
 };
@@ -71,10 +89,41 @@ function renderedBestPhotos(photos) {
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
 
   for (var i = 0; i < photos.length; i++) {
+    $el.append($('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>'));
+  }
+
+  return $el;
+}
+
+function renderedBestPosts(posts) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Posts</div>'));
+
+  for (var i = 0; i < posts.length; i++) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
-    $wrapper.append($('<img class="popularity-photo" src="' + photos[i].picture + '"/>'));
+    var $post = fbRenderer.renderedPost(posts[i]);
+    $post.addClass('popularity-element');
+    $post.css('position', 'relative');
+    $wrapper.append($post);
     $el.append($wrapper);
   }
+
+  return $el;
+}
+
+function renderedBestEvents(posts) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Events</div>'));
+
+  return $el;
+}
+
+function renderedBestLikes(posts) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Likes</div>'));
 
   return $el;
 }
