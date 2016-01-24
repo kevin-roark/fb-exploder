@@ -12,14 +12,17 @@ var DelayBeforeDemographicWaterfall = 33666;
 var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer, $demographicLayer, orderedLayers;
 $(function() {
   $container = $('#content-container');
-  $photosLayer = $('#photos-layer');
-  $albumsLayer = $('#albums-layer');
-  $postsLayer = $('#posts-layer');
-  $likesLayer = $('#likes-layer');
-  $eventsLayer = $('#events-layer');
-  $placesLayer = $('#places-layer');
-  $groupsLayer = $('#groups-layer');
-  $demographicLayer = $('#demographic-layer');
+
+  function makeLayer(id) { var $layer = $('<div class="content-layer" id="' + id + '"></div>'); $container.append($layer); return $layer; }
+
+  $photosLayer = makeLayer('photos-layer');
+  $albumsLayer = makeLayer('albums-layer');
+  $postsLayer = makeLayer('posts-layer');
+  $likesLayer = makeLayer('likes-layer');
+  $eventsLayer = makeLayer('events-layer');
+  $placesLayer = makeLayer('places-layer');
+  $groupsLayer = makeLayer('groups-layer');
+  $demographicLayer = makeLayer('demographic-layer');
   orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $demographicLayer];
 });
 
@@ -373,10 +376,17 @@ function removeFromArray(arr, el) {
 
 },{"./fb-renderer":3,"kutility":9,"moment":10}],2:[function(require,module,exports){
 
+var fbRenderer = require('./fb-renderer');
+
 var PiecesToShow = 3;
 var LikeValue = 1;
 var CommentValue = 2;
 var ShareValue = 3;
+
+var $container;
+$(function() {
+  $container = $('#content-container');
+});
 
 /// Public
 
@@ -388,9 +398,15 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   console.log({photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents});
 
-  if (finishedCallback) {
-    finishedCallback();
-  }
+  var $popularityZone = $('<div class="popularity-zone"></div>');
+  $container.append($popularityZone);
+
+  var $bestPhotos = renderedBestPhotos(bestPhotos);
+  $popularityZone.append($bestPhotos);
+
+  $bestPhotos.animate({opacity: 1}, 2000);
+
+  setTimeout(finishedCallback, 30000);
 };
 
 /// Private
@@ -426,7 +442,21 @@ function calculateStats(item) {
   };
 }
 
-},{}],3:[function(require,module,exports){
+function renderedBestPhotos(photos) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
+
+  for (var i = 0; i < photos.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $wrapper.append($('<img class="popularity-photo" src="' + photos[i].picture + '"/>'));
+    $el.append($wrapper);
+  }
+
+  return $el;
+}
+
+},{"./fb-renderer":3}],3:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');

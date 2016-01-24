@@ -1,8 +1,15 @@
 
+var fbRenderer = require('./fb-renderer');
+
 var PiecesToShow = 3;
 var LikeValue = 1;
 var CommentValue = 2;
 var ShareValue = 3;
+
+var $container;
+$(function() {
+  $container = $('#content-container');
+});
 
 /// Public
 
@@ -14,9 +21,15 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   console.log({photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents});
 
-  if (finishedCallback) {
-    finishedCallback();
-  }
+  var $popularityZone = $('<div class="popularity-zone"></div>');
+  $container.append($popularityZone);
+
+  var $bestPhotos = renderedBestPhotos(bestPhotos);
+  $popularityZone.append($bestPhotos);
+
+  $bestPhotos.animate({opacity: 1}, 2000);
+
+  setTimeout(finishedCallback, 30000);
 };
 
 /// Private
@@ -50,4 +63,18 @@ function calculateStats(item) {
     shares: item.shares ? item.shares.count : 0,
     comments: item.comments && item.comments.summary ? item.comments.summary.total_count : 0
   };
+}
+
+function renderedBestPhotos(photos) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
+
+  for (var i = 0; i < photos.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $wrapper.append($('<img class="popularity-photo" src="' + photos[i].picture + '"/>'));
+    $el.append($wrapper);
+  }
+
+  return $el;
 }
