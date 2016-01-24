@@ -122,6 +122,7 @@ a {
 }
 
 .popularity-fb-element-wrapper {
+  position: relative;
   display: inline-block;
   width: 33%;
   text-align: center;
@@ -131,6 +132,14 @@ a {
   width: 95%; max-height: 600px;
   box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
   text-align: left;
+}
+
+.popularity-score-overlay {
+  position: absolute; right: 12px; top: 10px;
+  font-size: 44px;
+  font-family: "Times New Roman", serif;
+  color: rgb(233, 30, 30);
+  text-shadow: 3px 3px 4px rgb(135, 88, 203);
 }
 
 /*************************************************

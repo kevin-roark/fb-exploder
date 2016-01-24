@@ -466,7 +466,10 @@ function renderedBestPhotos(photos) {
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
 
   for (var i = 0; i < photos.length; i++) {
-    $el.append($('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>'));
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>');
+    $el.append($wrapper);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
   }
 
   return $el;
@@ -479,28 +482,55 @@ function renderedBestPosts(posts) {
 
   for (var i = 0; i < posts.length; i++) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $el.append($wrapper);
+
     var $post = fbRenderer.renderedPost(posts[i]);
     $post.addClass('popularity-element');
     $post.css('position', 'relative');
     $wrapper.append($post);
-    $el.append($wrapper);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(posts[i]) + '</div>'));
   }
 
   return $el;
 }
 
-function renderedBestEvents(posts) {
+function renderedBestEvents(events) {
   var $el = $('<div class="popularity-section"></div>');
 
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Events</div>'));
 
+  for (var i = 0; i < events.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $el.append($wrapper);
+
+    var $event = fbRenderer.renderedEvent(events[i]);
+    $event.addClass('popularity-element');
+    $event.css('position', 'relative');
+    $wrapper.append($event);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateEventPoints(events[i]) + '</div>'));
+  }
+
   return $el;
 }
 
-function renderedBestLikes(posts) {
+function renderedBestLikes(likes) {
   var $el = $('<div class="popularity-section"></div>');
 
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Likes</div>'));
+
+  for (var i = 0; i < likes.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $el.append($wrapper);
+
+    var $like = fbRenderer.renderedLike(likes[i]);
+    $like.addClass('popularity-element');
+    $like.css('position', 'relative');
+    $wrapper.append($like);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateLikePoints(likes[i]) + '</div>'));
+  }
 
   return $el;
 }
