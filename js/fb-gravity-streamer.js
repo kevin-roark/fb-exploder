@@ -258,7 +258,7 @@ function setupDemographicStream(fbData) {
   }
 
   if (fbData.hometown) {
-    demographicText.push(fbData.hometown + ' is ' + fbData.name + "'s hometown");
+    demographicText.push(fbData.hometown.name + ' is ' + fbData.name + "'s hometown");
   }
 
   if (fbData.location) {
