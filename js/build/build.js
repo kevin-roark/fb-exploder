@@ -395,8 +395,8 @@ module.exports.start = function _start(dump, finishedCallback) {
   var bestPosts = dump.posts ? calculateBestElements(dump.posts.data, calculateStandardPoints) : [];
   var bestLikes = dump.likes ? calculateBestElements(dump.likes.data, calculateLikePoints) : [];
   var bestEvents = dump.events ? calculateBestElements(dump.events.data, calculateEventPoints) : [];
-
-  console.log({photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents});
+  var bestContent = {photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents};
+  console.log(bestContent);
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
   $container.append($popularityZone);
@@ -425,9 +425,13 @@ module.exports.start = function _start(dump, finishedCallback) {
   }, 15000);
 
   setTimeout(finishedCallback, 30000);
+
+  generateCompositeImage(bestContent, function(compositeImage) {
+    $popularityZone.append(compositeImage);
+  });
 };
 
-/// Private
+/// Calculation
 
 function calculateBestElements(elements, pointCalculator) {
   if (!elements) return [];
@@ -459,6 +463,8 @@ function calculateStats(item) {
     comments: item.comments && item.comments.summary ? item.comments.summary.total_count : 0
   };
 }
+
+/// Dom Rendering
 
 function renderedBestPhotos(photos) {
   var $el = $('<div class="popularity-section"></div>');
@@ -533,6 +539,39 @@ function renderedBestLikes(likes) {
   }
 
   return $el;
+}
+
+/// Image Generation
+
+function generateCompositeImage(bestContent, callback) {
+  var canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 600;
+
+  var context = canvas.getContext('2d');
+
+  bestContent.photos.forEach(function(photo, idx) {
+    var photoHeight = canvas.height / bestContent.photos.length;
+    drawImageFromUrl(photo.picture, context, 0, photoHeight * idx, canvas.width, photoHeight);
+  });
+
+  setTimeout(function() {
+    var image = new Image();
+    image.src = canvas.toDataURL();
+    if (callback) {
+      callback(image);
+    }
+  }, 3000); // to allow images to load...
+}
+
+function drawImageFromUrl(url, context, x, y, w, h) {
+  var img = new Image();
+  img.setAttribute('crossOrigin', '*');
+
+  img.onload = function() {
+    context.drawImage(img, x, y, w, h);
+  };
+
+  img.src = url;
 }
 
 },{"./fb-renderer":3}],3:[function(require,module,exports){
