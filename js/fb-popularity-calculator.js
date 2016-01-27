@@ -1,5 +1,6 @@
 
 var fbRenderer = require('./fb-renderer');
+var multiline = require('./lib/multiline');
 
 var PiecesToShow = 3;
 var LikeValue = 1;
@@ -172,9 +173,41 @@ function generateCompositeImage(bestContent, callback) {
 
   var context = canvas.getContext('2d');
 
-  bestContent.photos.forEach(function(photo, idx) {
-    var photoHeight = canvas.height / bestContent.photos.length;
-    drawImageFromUrl(photo.picture, context, 0, photoHeight * idx, canvas.width, photoHeight);
+  bestContent.photos.forEach(function(photo) {
+    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
+    var height = (photo.height / photo.width) * width;
+    var x = (canvas.width - width * 0.8) * Math.random();
+    var y = (canvas.height - height * 0.8) * Math.random();
+    drawImageFromUrl(photo.picture, context, {x: x, y: y, w: width, h: height});
+  });
+
+  context.font = '16px "Times New Roman"';
+
+  bestContent.posts.forEach(function(post, idx) {
+    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
+    var x = (canvas.width - width * 0.8) * Math.random();
+    var y = (canvas.height * 0.9) * Math.random();
+
+    function drawText() {
+      if (post.message) {
+        multiline.draw(context, post.message, 15, x + 2, y + 17, width - 4);
+      }
+    }
+
+    if (post.picture) {
+      drawImageFromUrl(post.picture, context, {x: x, y: y, w: width, h: width}, drawText);
+    }
+    else {
+      drawText();
+    }
+  });
+
+  bestContent.events.forEach(function(event, idx) {
+
+  });
+
+  bestContent.likes.forEach(function(like, idx) {
+
   });
 
   setTimeout(function() {
@@ -186,12 +219,15 @@ function generateCompositeImage(bestContent, callback) {
   }, 3000); // to allow images to load...
 }
 
-function drawImageFromUrl(url, context, x, y, w, h) {
+function drawImageFromUrl(url, context, rect, callback) {
   var img = new Image();
   img.setAttribute('crossOrigin', '*');
 
   img.onload = function() {
-    context.drawImage(img, x, y, w, h);
+    context.drawImage(img, rect.x, rect.y, rect.w, rect.h);
+    if (callback) {
+      callback();
+    }
   };
 
   img.src = url;

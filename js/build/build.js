@@ -374,9 +374,10 @@ function removeFromArray(arr, el) {
   }
 }
 
-},{"./fb-renderer":3,"kutility":9,"moment":10}],2:[function(require,module,exports){
+},{"./fb-renderer":3,"kutility":10,"moment":11}],2:[function(require,module,exports){
 
 var fbRenderer = require('./fb-renderer');
+var multiline = require('./lib/multiline');
 
 var PiecesToShow = 3;
 var LikeValue = 1;
@@ -549,9 +550,41 @@ function generateCompositeImage(bestContent, callback) {
 
   var context = canvas.getContext('2d');
 
-  bestContent.photos.forEach(function(photo, idx) {
-    var photoHeight = canvas.height / bestContent.photos.length;
-    drawImageFromUrl(photo.picture, context, 0, photoHeight * idx, canvas.width, photoHeight);
+  bestContent.photos.forEach(function(photo) {
+    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
+    var height = (photo.height / photo.width) * width;
+    var x = (canvas.width - width * 0.8) * Math.random();
+    var y = (canvas.height - height * 0.8) * Math.random();
+    drawImageFromUrl(photo.picture, context, {x: x, y: y, w: width, h: height});
+  });
+
+  context.font = '16px "Times New Roman"';
+
+  bestContent.posts.forEach(function(post, idx) {
+    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
+    var x = (canvas.width - width * 0.8) * Math.random();
+    var y = (canvas.height * 0.9) * Math.random();
+
+    function drawText() {
+      if (post.message) {
+        multiline.draw(context, post.message, 15, x + 2, y + 17, width - 4);
+      }
+    }
+
+    if (post.picture) {
+      drawImageFromUrl(post.picture, context, {x: x, y: y, w: width, h: width}, drawText);
+    }
+    else {
+      drawText();
+    }
+  });
+
+  bestContent.events.forEach(function(event, idx) {
+
+  });
+
+  bestContent.likes.forEach(function(like, idx) {
+
   });
 
   setTimeout(function() {
@@ -563,18 +596,21 @@ function generateCompositeImage(bestContent, callback) {
   }, 3000); // to allow images to load...
 }
 
-function drawImageFromUrl(url, context, x, y, w, h) {
+function drawImageFromUrl(url, context, rect, callback) {
   var img = new Image();
   img.setAttribute('crossOrigin', '*');
 
   img.onload = function() {
-    context.drawImage(img, x, y, w, h);
+    context.drawImage(img, rect.x, rect.y, rect.w, rect.h);
+    if (callback) {
+      callback();
+    }
   };
 
   img.src = url;
 }
 
-},{"./fb-renderer":3}],3:[function(require,module,exports){
+},{"./fb-renderer":3,"./lib/multiline":6}],3:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');
@@ -820,7 +856,7 @@ function span(className, content) {
   return '<span class="' + className + '">' + content + '</span>';
 }
 
-},{"kutility":9,"moment":10}],4:[function(require,module,exports){
+},{"kutility":10,"moment":11}],4:[function(require,module,exports){
 
 var TEST_MODE = true;
 
@@ -1634,6 +1670,45 @@ module.exports.meDump = function(callback) {
 });
 },{}],6:[function(require,module,exports){
 
+// Return an array to iterate over. For my uses this is
+// more efficient, because I only need to calculate the line text
+// and positions once, instead of each iteration during animations.
+module.exports.wrap = function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  var words = text.split(' ')
+    , line = ''
+    , lines = [];
+
+  for(var n = 0, len = words.length; n < len; n++) {
+    var testLine = line + words[n] + ' '
+      , metrics = ctx.measureText(testLine)
+      , testWidth = metrics.width;
+
+    if (testWidth > maxWidth) {
+      lines.push({ text: line, x: x, y: y });
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+
+  lines.push({ text: line, x: x, y: y });
+  return lines;
+};
+
+module.exports.draw = function drawMultiline(context, text, linespacing, x, y, width) {
+  var txt = module.exports.wrap(context, text, x, y, width, linespacing);
+
+  for (var i = 0; i < txt.length; i++){
+    var item = txt[i];
+    context.fillText(item.text, item.x, item.y);
+  }
+
+  return txt[txt.length - 1].y + linespacing;
+};
+
+},{}],7:[function(require,module,exports){
+
 module.exports = LoadingView;
 
 function LoadingView(options) {
@@ -1674,7 +1749,7 @@ LoadingView.prototype.stop = function() {
   this.$el.fadeOut();
 };
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 
 var TWEEN = require('tween.js');
 var buzz = require('./lib/buzz');
@@ -1771,7 +1846,7 @@ $(function() {
 
 });
 
-},{"./fb":4,"./fb-gravity-streamer":1,"./fb-popularity-calculator":2,"./fb-renderer":3,"./lib/buzz":5,"./loading-view":6,"./shims":8,"tween.js":11}],8:[function(require,module,exports){
+},{"./fb":4,"./fb-gravity-streamer":1,"./fb-popularity-calculator":2,"./fb-renderer":3,"./lib/buzz":5,"./loading-view":7,"./shims":9,"tween.js":12}],9:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -1799,7 +1874,7 @@ $(function() {
         };
 }());
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -2373,7 +2448,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -5569,7 +5644,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js
@@ -6445,4 +6520,4 @@ TWEEN.Interpolation = {
 
 })(this);
 
-},{}]},{},[7]);
+},{}]},{},[8]);
