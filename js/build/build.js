@@ -428,7 +428,9 @@ module.exports.start = function _start(dump, finishedCallback) {
   setTimeout(finishedCallback, 30000);
 
   generateCompositeImage(bestContent, function(compositeImage) {
-    $popularityZone.append(compositeImage);
+    var $img = $(compositeImage);
+    $img.css('max-width', '100%');
+    $popularityZone.append($img);
   });
 };
 
@@ -546,54 +548,196 @@ function renderedBestLikes(likes) {
 
 function generateCompositeImage(bestContent, callback) {
   var canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 600;
+  canvas.width = canvas.height = 1024;
 
   var context = canvas.getContext('2d');
 
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  context.shadowBlur = 20;
+  context.shadowOffsetX = 12;
+  context.shadowOffsetY = 12;
+
+  var imagesToLoad = 0;
+  var totalPoints = 0;
+  var hasFinished = false;
+
+  function imageFinishedDrawing() {
+    imagesToLoad -= 1;
+    if (imagesToLoad === 0) {
+      finish();
+    }
+  }
+
+  function finish() {
+    if (hasFinished) {
+      return;
+    }
+
+    hasFinished = true;
+
+    drawTextElements();
+
+    drawBrandElements();
+
+    var image = new Image();
+    image.src = canvas.toDataURL("image/jpeg");
+    if (callback) {
+      callback(image);
+    }
+  }
+
   bestContent.photos.forEach(function(photo) {
+    totalPoints += calculateStandardPoints(photo);
+
+    imagesToLoad += 1;
+
     var width = (Math.random() * 0.25 + 0.2) * canvas.width;
     var height = (photo.height / photo.width) * width;
     var x = (canvas.width - width * 0.8) * Math.random();
     var y = (canvas.height - height * 0.8) * Math.random();
-    drawImageFromUrl(photo.picture, context, {x: x, y: y, w: width, h: height});
+    drawImageFromUrl(photo.picture, context, {x: x, y: y, w: width, h: height}, imageFinishedDrawing);
   });
 
-  context.font = '16px "Times New Roman"';
-
-  bestContent.posts.forEach(function(post, idx) {
-    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
-    var x = (canvas.width - width * 0.8) * Math.random();
-    var y = (canvas.height * 0.9) * Math.random();
-
-    function drawText() {
-      if (post.message) {
-        multiline.draw(context, post.message, 15, x + 2, y + 17, width - 4);
-      }
-    }
+  bestContent.posts.forEach(function(post) {
+    totalPoints += calculateStandardPoints(post);
 
     if (post.picture) {
-      drawImageFromUrl(post.picture, context, {x: x, y: y, w: width, h: width}, drawText);
+      imagesToLoad += 1;
+      drawArbitraryImage(post.picture, imageFinishedDrawing);
+    }
+  });
+
+  bestContent.events.forEach(function(event) {
+    totalPoints += calculateEventPoints(event);
+
+    if (event.cover && event.cover.source) {
+      imagesToLoad += 1;
+      drawArbitraryImage(event.cover.source, imageFinishedDrawing);
+    }
+  });
+
+  bestContent.likes.forEach(function(like) {
+    totalPoints += calculateLikePoints(like);
+
+    if (like.cover && like.cover.source) {
+      imagesToLoad += 1;
+      drawArbitraryImage(like.cover.source, imageFinishedDrawing);
+    }
+  });
+
+  function drawTextElements() {
+    context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    context.shadowBlur = 1;
+    context.shadowOffsetX = 2;
+    context.shadowOffsetY = 2;
+
+    context.fillStyle = "#111111";
+    context.font = '20px "Helvetica, Arial, sans-serif"';
+    context.__fontSize = 20;
+
+    bestContent.posts.forEach(function(post) {
+      if (post.message) {
+        drawArbitraryText(post.message);
+      }
+    });
+
+    bestContent.events.forEach(function(event) {
+      var goingText = event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied';
+      drawArbitraryText(goingText);
+
+      context.save();
+      context.font = 'bold 24px "Times New Roman"';
+      context.__fontSize = 24;
+      drawArbitraryText(event.name);
+      context.restore();
+    });
+
+    bestContent.likes.forEach(function(like) {
+      var likeText = like.likes && like.likes > 1 ? like.likes + ' people like this.' : '1 person likes this';
+      drawArbitraryText(likeText);
+
+      context.save();
+      context.font = 'bold 24px "Times New Roman"';
+      context.__fontSize = 24;
+      drawArbitraryText(like.name);
+      context.restore();
+    });
+  }
+
+  function drawBrandElements() {
+    var brandSquareWidth = 450;
+    var brandSquareHeight = 360;
+    var brandSquareX = canvas.width/2 - brandSquareWidth/2;
+    var brandSquareY = canvas.height/2 - brandSquareHeight/1.2;
+    var textX = brandSquareX + 10;
+    var textWidth = brandSquareWidth - 20;
+
+    context.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    context.shadowBlur = 40;
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
+
+    context.fillStyle = '#ffffff';
+    context.fillRect(brandSquareX, brandSquareY, brandSquareWidth, brandSquareHeight);
+
+    context.fillStyle = '#111111';
+    context.shadowColor = 'rgba(0, 0, 0, 0)';
+    context.font = '24px "Times New Roman"';
+    context.fillText('I looked at my Life In Review...', textX, brandSquareY + 40, textWidth);
+
+    context.save();
+    context.textAlign = 'center';
+    context.shadowColor = 'rgb(135, 88, 203)';
+    context.shadowBlur = 4;
+    context.shadowOffsetX = 3;
+    context.shadowOffsetY = 3;
+    context.fillStyle = 'rgb(233, 30, 30)';
+    context.font = 'bold 64px "Times New Roman"';
+    context.fillText('I SCORED', canvas.width/2, brandSquareY + 120, brandSquareWidth - 20);
+    context.fillText(totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.restore();
+
+    context.fillText('What do you score?', textX, brandSquareY + 240, textWidth);
+    context.fillText('Let me know in the comments below.', textX, brandSquareY + 270, textWidth);
+
+    context.textAlign = 'center';
+    context.shadowColor = 'rgb(235, 233, 28)';
+    context.shadowBlur = 4;
+    context.shadowOffsetX = 3;
+    context.shadowOffsetY = 3;
+    context.fillStyle = 'rgb(30, 233, 63)';
+    context.font = 'bold 26px "Times New Roman"';
+    context.fillText('CARMICHAEL HELPED ME', canvas.width/2, brandSquareY + 320, brandSquareWidth - 20);
+  }
+
+  function arbitraryRect(allowLeakage) {
+    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
+
+    var x, y;
+    if (allowLeakage) {
+      x = (width * -0.2) + ((canvas.width - 0.6 * width) * Math.random());
+      y = -100 + ((canvas.height + 200) * Math.random());
     }
     else {
-      drawText();
+      x = (canvas.width - width) * Math.random();
+      y = (canvas.height * 0.85) * Math.random();
     }
-  });
 
-  bestContent.events.forEach(function(event, idx) {
+    return {x: x, y: y, w: width};
+  }
 
-  });
+  function drawArbitraryImage(imageURL, callback) {
+    var pictureRect = arbitraryRect(true);
+    drawImageFromUrl(imageURL, context, pictureRect, callback);
+  }
 
-  bestContent.likes.forEach(function(like, idx) {
-
-  });
-
-  setTimeout(function() {
-    var image = new Image();
-    image.src = canvas.toDataURL();
-    if (callback) {
-      callback(image);
-    }
-  }, 3000); // to allow images to load...
+  function drawArbitraryText(text) {
+    var messageRect = arbitraryRect(false);
+    multiline.draw(context, text, context.__fontSize, messageRect.x, messageRect.y, messageRect.w);
+  }
 }
 
 function drawImageFromUrl(url, context, rect, callback) {
@@ -601,6 +745,11 @@ function drawImageFromUrl(url, context, rect, callback) {
   img.setAttribute('crossOrigin', '*');
 
   img.onload = function() {
+    if (!rect.h) {
+      var aspectRatio = img.width / img.height;
+      rect.h = rect.w / aspectRatio;
+    }
+
     context.drawImage(img, rect.x, rect.y, rect.w, rect.h);
     if (callback) {
       callback();
