@@ -389,9 +389,11 @@ $(function() {
   $container = $('#content-container');
 });
 
-/// Public
+/// State
 
 module.exports.start = function _start(dump, finishedCallback) {
+  var hasEnteredSharingState = false;
+
   var bestPhotos = dump.photos ? calculateBestElements(dump.photos.data, calculateStandardPoints) : [];
   var bestPosts = dump.posts ? calculateBestElements(dump.posts.data, calculateStandardPoints) : [];
   var bestLikes = dump.likes ? calculateBestElements(dump.likes.data, calculateLikePoints) : [];
@@ -414,25 +416,52 @@ module.exports.start = function _start(dump, finishedCallback) {
   var $bestLikes = renderedBestLikes(bestLikes);
   $popularityZone.append($bestLikes);
 
+  var $shareButtonWrapper = $('<div style="text-align: center; width: 100%;"></div>');
+  var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share your Life in Review!</div>');
+  $shareButton.css('opacity', '0');
+  $shareButton.click(function() {
+    if (hasEnteredSharingState) {
+      return;
+    }
+
+    enterSharingState(bestContent);
+  });
+  $shareButtonWrapper.append($shareButton);
+  $popularityZone.append($shareButtonWrapper);
+
   $bestPhotos.animate({opacity: 1}, 2000);
   setTimeout(function() {
     $bestPosts.animate({opacity: 1}, 2000);
-  }, 5000);
+  }, 3000);
   setTimeout(function() {
     $bestEvents.animate({opacity: 1}, 2000);
-  }, 10000);
+  }, 6000);
   setTimeout(function() {
     $bestLikes.animate({opacity: 1}, 2000);
-  }, 15000);
+  }, 9000);
+  setTimeout(function() {
+    $shareButton.animate({opacity: 1}, 600);
+  }, 11000);
 
   setTimeout(finishedCallback, 30000);
+};
+
+function enterSharingState(bestContent) {
+  var $popularityShareWrapper = $('<div class="popularity-share-wrapper" style="opacity: 0;"></div>');
+  $container.append($popularityShareWrapper);
+  $popularityShareWrapper.animate({opacity: 1}, 1500);
+
+  var $popularityShareZone = $('<div class="popularity-share-zone"></div>');
+  $popularityShareWrapper.append($popularityShareZone);
 
   generateCompositeImage(bestContent, function(compositeImage) {
     var $img = $(compositeImage);
     $img.css('max-width', '100%');
-    $popularityZone.append($img);
+    $img.css('opacity', '0');
+    $popularityShareZone.append($img);
+    $img.animate({opacity: 1}, 500);
   });
-};
+}
 
 /// Calculation
 
@@ -611,7 +640,7 @@ function generateCompositeImage(bestContent, callback) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += calculateEventPoints(event);
+    totalPoints += Math.round(calculateEventPoints(event) * 0.01);
 
     if (event.cover && event.cover.source) {
       imagesToLoad += 1;
@@ -620,7 +649,7 @@ function generateCompositeImage(bestContent, callback) {
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += calculateLikePoints(like);
+    totalPoints += Math.round(calculateLikePoints(like) * 0.001);
 
     if (like.cover && like.cover.source) {
       imagesToLoad += 1;
