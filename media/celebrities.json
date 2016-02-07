@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Gary Busey",
+    "bio": "Busey began his show business career as a drummer in The Rubber Band",
+    "image": "busey.png"
+  },
+  {
+    "name": "Andy Rooney",
+    "bio": "He was the first journalist to reach the Ludendorff Bridge after the 9th Armored Division captured it on March 7, 1945.",
+    "image": "rooney.png"
+  },
+  {
+    "name": "Carlos Mencia",
+    "bio": "Ned Arnel Mencia (born October 22, 1967), known professionally as Carlos Mencia (and previously Ned Holness)",
+    "image": "carlos_mencia.png"
+  },
+  {
+    "name": "Slavoj Zizek",
+    "bio": "Zizek has been married three times: firstly, to Renata Salecl, another notable Slovene philosopher; secondly, to fashion model Analia Hounie, daughter of an Argentine Lacanian psychoanalyst; and thirdly, to the Slovene journalist Jela Krecic, daughter of the renowned historian of architecture Peter Krecic",
+    "image": "zizek.png"
+  },
+  {
+    "name": "Cat Stevens",
+    "bio": "He was called \"the artist boy\" and mentions that \"I was beat up, but I was noticed\".",
+    "image": "stevens.png"
+  },
+  {
+    "name": "Rachel Ray",
+    "bio": "She believes that measuring \"takes away from the creative, hands-on process of cooking\" and instead favors approximations such as \"half a palmful.\"",
+    "image": "rachel.png"
+  },
+  {
+    "name": "Dakota Fanning",
+    "bio": "In February 2014, she recorded a voice role for the animated movie Yellowbird.",
+    "image": "dakota.png"
+  },
+  {
+    "name": "Charlize Theron",
+    "bio": "From 1997 to 2001, she dated Third Eye Blind frontman Stephan Jenkins.",
+    "image" : "charlize.png"
+  },
+  {
+    "name": "Ashton Kutcher",
+    "bio": "To earn money for his tuition, Kutcher worked as a college summer hire in the cereal department for the General Mills plant in Cedar Rapids, and sometimes sold his blood.",
+    "image" : "ashton.png"
+  },
+  {
+    "name": "Doug Pitt",
+    "bio": "In January 2011, Pitt became the first American on record to climb Mount Kilimanjaro and descend on a mountain bike.",
+    "image" : "pitt.png"
+  },
+  {
+    "name": "Claire Danes",
+    "bio": "At age 13, Danes' first big job was working on the Dudley Moore TV sitcom pilot called Dudley, which was shot at Silvercup Studios in Astoria, Queens.",
+    "image" : "claire.png"
+  },
+  {
+    "name": "Whoopi Goldberg",
+    "bio": "Most recently, she had a cameo role as Megan Fox's boss in the 2014 reboot of Teenage Mutant Ninja Turtles, and played herself in Chris Rock's Top Five.",
+    "image" : "whoopi.png"
+  },
+  {
+    "name": "Idris Elba",
+    "bio": "In 1986, he began helping an uncle with his wedding DJ business; within a year, he had started his own DJ company with some of his friends.",
+    "image" : "idris.png"
+  },
+  {
+    "name": "Usain Bolt",
+    "bio": "Bolt's achievements in sprinting have earned him the media nickname \"Lightning Bolt\".",
+    "image" : "bolt.png"
+  },
+  {
+    "name": "Mother Theresa",
+    "bio": "Her father may have been from Prizren, Kosovo, while her mother may have been from a village near Gjakova.",
+    "image" : "mteresa.png"
+  },
+  {
+    "name": "Katy Perry",
+    "bio": "Growing up, Perry and her siblings were not allowed to eat Lucky Charms as the term \"luck\" reminded their mother of Lucifer, and had to call deviled eggs \"angeled eggs\".",
+    "image" : "katy.png"
+  },
+  {
+    "name": "Leonardo Di Caprio",
+    "bio": "In 2010, his environmental work earned DiCaprio a nomination for the VH1 Do Something Award.",
+    "image" : "leo.png"
+  },
+  {
+    "name": "Leonardo da Vinci",
+    "bio": "His sexuality has been the subject of satire, analysis, and speculation.",
+    "image" : "vinci.png"
+  },
+  {
+    "name": "Clay Aiken",
+    "bio": "While the origin of the term \"Claymates\" is unknown, Aiken trademarked the term.",
+    "image" : "aiken.png"
+  },
+  {
+    "name": "Lil Bow Wow",
+    "bio": "Since the success of Like Mike, Bow Wow has starred in several Hollywood films, including Roll Bounce, The Fast and the Furious: Tokyo Drift and Hurricane Season.",
+    "image" : "bowwow.png"
+  }
+]

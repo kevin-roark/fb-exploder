@@ -70,19 +70,43 @@ module.exports.start = function _start(dump, finishedCallback) {
 };
 
 function enterSharingState(bestContent) {
-  var $popularityShareWrapper = $('<div class="popularity-share-wrapper" style="opacity: 0;"></div>');
+  var $popularityShareWrapper = $('<div class="popularity-share-wrapper">');
   $container.append($popularityShareWrapper);
-  $popularityShareWrapper.animate({opacity: 1}, 1500);
+  $popularityShareWrapper.fadeIn(1500);
 
-  var $popularityShareZone = $('<div class="popularity-share-zone"></div>');
+  var $popularityShareZone = $('<div class="popularity-share-zone">');
   $popularityShareWrapper.append($popularityShareZone);
+
+  var $celebrityHeadZone = $('<div class="celebrity-head-zone">');
+  $('body').append($celebrityHeadZone);
+
+  var $celebrityHeadBio = $('<div class="celebrity-head-bio">');
+  $('body').append($celebrityHeadBio);
+
+  $.getJSON('/media/celebrities.json', function(celebrities) {
+    celebrities.forEach(function(celeb, idx) {
+      var $head = $('<div class="celebrity-head">');
+      $head.append($('<img src="/media/celebrity_heads/' + celeb.image + '">'))
+      $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+      $head.hover(function() {
+        $celebrityHeadBio.text(celeb.bio);
+      });
+      $celebrityHeadZone.append($head);
+
+      if (idx === 0) {
+        $celebrityHeadBio.text(celeb.bio);
+      }
+    });
+  });
 
   generateCompositeImage(bestContent, function(compositeImage) {
     var $img = $(compositeImage);
     $img.css('max-width', '100%');
-    $img.css('opacity', '0');
     $popularityShareZone.append($img);
-    $img.animate({opacity: 1}, 500);
+
+    $popularityShareZone.fadeIn();
+    $celebrityHeadZone.fadeIn();
+    $celebrityHeadBio.fadeIn();
   });
 }
 
