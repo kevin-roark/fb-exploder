@@ -1,4 +1,32 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* thanks henry */
+
+function v() {
+  return Math.floor(Math.random() * 256);
+}
+
+module.exports.randomColor = function() {
+  return "rgb(" + v() + "," + v() + ", " + v() + ")";
+};
+
+module.exports.randomBrightColor = function() {
+  var key = Math.floor(Math.random() * 6);
+
+  if (key === 0)
+    return "rgb(" + "0,255," + v() + ")";
+  else if (key === 1)
+    return "rgb(" + "0," + v() + ",255)";
+  else if (key === 2)
+    return "rgb(" + "255, 0," + v() + ")";
+  else if (key === 3)
+    return "rgb(" + "255," + v() + ",0)";
+  else if (key === 4)
+    return "rgb(" + v() + ",255,0)";
+  else
+    return "rgb(" + v() + ",0,255)";
+};
+
+},{}],2:[function(require,module,exports){
 
 var kt = require('kutility');
 var moment = require('moment');
@@ -374,10 +402,11 @@ function removeFromArray(arr, el) {
   }
 }
 
-},{"./fb-renderer":3,"kutility":10,"moment":11}],2:[function(require,module,exports){
+},{"./fb-renderer":4,"kutility":11,"moment":12}],3:[function(require,module,exports){
 
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
+var color = require('./color');
 
 var PiecesToShow = 3;
 var LikeValue = 1;
@@ -417,36 +446,38 @@ module.exports.start = function _start(dump, finishedCallback) {
   $popularityZone.append($bestLikes);
 
   var $shareButtonWrapper = $('<div style="text-align: center; width: 100%;"></div>');
-  var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share your Life in Review!</div>');
-  $shareButton.css('opacity', '0');
-  $shareButton.click(function() {
+  var $collageButton = $('<div class="shadow-button facebook-style-button" id="generate-collage-button">Share your own Life in Review collage!</div>');
+  $collageButton.css('opacity', '0');
+  $collageButton.click(function() {
     if (hasEnteredSharingState) {
       return;
     }
 
     enterSharingState(bestContent);
   });
-  $shareButtonWrapper.append($shareButton);
+  $shareButtonWrapper.append($collageButton);
   $popularityZone.append($shareButtonWrapper);
 
-  $bestPhotos.animate({opacity: 1}, 2000);
+  $bestPhotos.animate({opacity: 1}, 800);
   setTimeout(function() {
-    $bestPosts.animate({opacity: 1}, 2000);
-  }, 3000);
+    $bestPosts.animate({opacity: 1}, 800);
+  }, 500);
   setTimeout(function() {
-    $bestEvents.animate({opacity: 1}, 2000);
-  }, 6000);
+    $bestEvents.animate({opacity: 1}, 800);
+  }, 1000);
   setTimeout(function() {
-    $bestLikes.animate({opacity: 1}, 2000);
-  }, 9000);
+    $bestLikes.animate({opacity: 1}, 800);
+  }, 1500);
   setTimeout(function() {
-    $shareButton.animate({opacity: 1}, 600);
-  }, 11000);
+    $collageButton.animate({opacity: 1}, 800);
+  }, 1600);
 
-  setTimeout(finishedCallback, 30000);
+  //setTimeout(finishedCallback, 30000);
 };
 
 function enterSharingState(bestContent) {
+  var hasSharedToFacebook = false;
+
   var $popularityShareWrapper = $('<div class="popularity-share-wrapper">');
   $container.append($popularityShareWrapper);
   $popularityShareWrapper.fadeIn(1500);
@@ -460,31 +491,73 @@ function enterSharingState(bestContent) {
   var $celebrityHeadBio = $('<div class="celebrity-head-bio">');
   $('body').append($celebrityHeadBio);
 
-  $.getJSON('/media/celebrities.json', function(celebrities) {
-    celebrities.forEach(function(celeb, idx) {
-      var $head = $('<div class="celebrity-head">');
-      $head.append($('<img src="/media/celebrity_heads/' + celeb.image + '">'))
-      $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
-      $head.hover(function() {
-        $celebrityHeadBio.text(celeb.bio);
-      });
-      $celebrityHeadZone.append($head);
-
-      if (idx === 0) {
-        $celebrityHeadBio.text(celeb.bio);
-      }
-    });
-  });
-
-  generateCompositeImage(bestContent, function(compositeImage) {
-    var $img = $(compositeImage);
-    $img.css('max-width', '100%');
-    $popularityShareZone.append($img);
-
+  generateCompositeCanvas(bestContent, function(compositeCanvas) {
+    var $canvas = $(compositeCanvas);
+    $canvas.css('max-width', '100%');
+    $popularityShareZone.append($canvas);
     $popularityShareZone.fadeIn();
-    $celebrityHeadZone.fadeIn();
-    $celebrityHeadBio.fadeIn();
+
+    var context = compositeCanvas.getContext('2d');
+
+    $.getJSON('/media/celebrities.json', function(celebrities) {
+      celebrities.forEach(function(celeb, idx) {
+        var $head = $('<div class="celebrity-head">');
+        $head.append($('<img src="/media/celebrity_heads/' + celeb.image + '">'));
+        $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+        $head.hover(function() {
+          $celebrityHeadBio.text(celeb.bio);
+        });
+        $head.click(function() {
+          if (hasSharedToFacebook) {
+            return;
+          }
+
+          var width = Math.random() * 120 + 80;
+          var randomRect = {
+            x: Math.random() * (compositeCanvas.width - width),
+            y: Math.random() * (compositeCanvas.height - width),
+            w: width,
+            h: width
+          };
+          context.shadowColor = color.randomColor();
+          drawImageFromUrl('/media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+        });
+        $celebrityHeadZone.append($head);
+
+        if (idx === 0) {
+          $celebrityHeadBio.text(celeb.bio);
+        }
+      });
+    });
+
+    setTimeout(function() {
+      $celebrityHeadZone.fadeIn();
+      $celebrityHeadBio.fadeIn();
+
+      setTimeout(function() {
+        var $celebrityHeadTip = $('<div class="celebrity-head-tip">Your Life Score has earned you valuable celebrities! Click their heads to personalize your Life in Review Collage, then share to Facebook below!</div>');
+        $('body').append($celebrityHeadTip);
+
+        var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
+        $shareButton.click(function() {
+          if (!hasSharedToFacebook) {
+            shareCanvasToFacebook(compositeCanvas);
+            $('.celebrity-head').css('pointer', 'auto');
+            hasSharedToFacebook = true;
+          }
+        });
+        $('body').append($shareButton);
+
+        $celebrityHeadTip.fadeIn();
+        $shareButton.fadeIn();
+      }, 500);
+    }, 3000);
   });
+}
+
+function shareCanvasToFacebook(canvas) {
+  var imageData = canvas.toDataURL("image/jpeg");
+  console.log(imageData);
 }
 
 /// Calculation
@@ -599,7 +672,7 @@ function renderedBestLikes(likes) {
 
 /// Image Generation
 
-function generateCompositeImage(bestContent, callback) {
+function generateCompositeCanvas(bestContent, callback) {
   var canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1024;
 
@@ -635,10 +708,8 @@ function generateCompositeImage(bestContent, callback) {
 
     drawBrandElements();
 
-    var image = new Image();
-    image.src = canvas.toDataURL("image/jpeg");
     if (callback) {
-      callback(image);
+      callback(canvas);
     }
   }
 
@@ -664,7 +735,7 @@ function generateCompositeImage(bestContent, callback) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.01);
+    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
 
     if (event.cover && event.cover.source) {
       imagesToLoad += 1;
@@ -673,7 +744,7 @@ function generateCompositeImage(bestContent, callback) {
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.001);
+    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
 
     if (like.cover && like.cover.source) {
       imagesToLoad += 1;
@@ -812,7 +883,7 @@ function drawImageFromUrl(url, context, rect, callback) {
   img.src = url;
 }
 
-},{"./fb-renderer":3,"./lib/multiline":6}],3:[function(require,module,exports){
+},{"./color":1,"./fb-renderer":4,"./lib/multiline":7}],4:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');
@@ -1058,7 +1129,7 @@ function span(className, content) {
   return '<span class="' + className + '">' + content + '</span>';
 }
 
-},{"kutility":10,"moment":11}],4:[function(require,module,exports){
+},{"kutility":11,"moment":12}],5:[function(require,module,exports){
 
 var TEST_MODE = true;
 
@@ -1139,7 +1210,7 @@ module.exports.meDump = function(callback) {
   api('/me?fields=' + combinedFields, callback);
 };
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
  // ----------------------------------------------------------------------------
  // Buzz, a Javascript HTML5 Audio library
  // v1.1.10 - Built 2015-04-20 13:05
@@ -1870,7 +1941,7 @@ module.exports.meDump = function(callback) {
     };
     return buzz;
 });
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 
 // Return an array to iterate over. For my uses this is
 // more efficient, because I only need to calculate the line text
@@ -1909,7 +1980,7 @@ module.exports.draw = function drawMultiline(context, text, linespacing, x, y, w
   return txt[txt.length - 1].y + linespacing;
 };
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 
 module.exports = LoadingView;
 
@@ -1951,7 +2022,7 @@ LoadingView.prototype.stop = function() {
   this.$el.fadeOut();
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 var TWEEN = require('tween.js');
 var buzz = require('./lib/buzz');
@@ -2048,7 +2119,7 @@ $(function() {
 
 });
 
-},{"./fb":4,"./fb-gravity-streamer":1,"./fb-popularity-calculator":2,"./fb-renderer":3,"./lib/buzz":5,"./loading-view":7,"./shims":9,"tween.js":12}],9:[function(require,module,exports){
+},{"./fb":5,"./fb-gravity-streamer":2,"./fb-popularity-calculator":3,"./fb-renderer":4,"./lib/buzz":6,"./loading-view":8,"./shims":10,"tween.js":13}],10:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -2076,7 +2147,7 @@ $(function() {
         };
 }());
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -2650,7 +2721,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -5846,7 +5917,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js
@@ -6722,4 +6793,4 @@ TWEEN.Interpolation = {
 
 })(this);
 
-},{}]},{},[8]);
+},{}]},{},[9]);

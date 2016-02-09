@@ -1,6 +1,7 @@
 
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
+var color = require('./color');
 
 var PiecesToShow = 3;
 var LikeValue = 1;
@@ -40,36 +41,38 @@ module.exports.start = function _start(dump, finishedCallback) {
   $popularityZone.append($bestLikes);
 
   var $shareButtonWrapper = $('<div style="text-align: center; width: 100%;"></div>');
-  var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share your Life in Review!</div>');
-  $shareButton.css('opacity', '0');
-  $shareButton.click(function() {
+  var $collageButton = $('<div class="shadow-button facebook-style-button" id="generate-collage-button">Share your own Life in Review collage!</div>');
+  $collageButton.css('opacity', '0');
+  $collageButton.click(function() {
     if (hasEnteredSharingState) {
       return;
     }
 
     enterSharingState(bestContent);
   });
-  $shareButtonWrapper.append($shareButton);
+  $shareButtonWrapper.append($collageButton);
   $popularityZone.append($shareButtonWrapper);
 
-  $bestPhotos.animate({opacity: 1}, 2000);
+  $bestPhotos.animate({opacity: 1}, 800);
   setTimeout(function() {
-    $bestPosts.animate({opacity: 1}, 2000);
-  }, 3000);
+    $bestPosts.animate({opacity: 1}, 800);
+  }, 500);
   setTimeout(function() {
-    $bestEvents.animate({opacity: 1}, 2000);
-  }, 6000);
+    $bestEvents.animate({opacity: 1}, 800);
+  }, 1000);
   setTimeout(function() {
-    $bestLikes.animate({opacity: 1}, 2000);
-  }, 9000);
+    $bestLikes.animate({opacity: 1}, 800);
+  }, 1500);
   setTimeout(function() {
-    $shareButton.animate({opacity: 1}, 600);
-  }, 11000);
+    $collageButton.animate({opacity: 1}, 800);
+  }, 1600);
 
-  setTimeout(finishedCallback, 30000);
+  //setTimeout(finishedCallback, 30000);
 };
 
 function enterSharingState(bestContent) {
+  var hasSharedToFacebook = false;
+
   var $popularityShareWrapper = $('<div class="popularity-share-wrapper">');
   $container.append($popularityShareWrapper);
   $popularityShareWrapper.fadeIn(1500);
@@ -83,31 +86,73 @@ function enterSharingState(bestContent) {
   var $celebrityHeadBio = $('<div class="celebrity-head-bio">');
   $('body').append($celebrityHeadBio);
 
-  $.getJSON('/media/celebrities.json', function(celebrities) {
-    celebrities.forEach(function(celeb, idx) {
-      var $head = $('<div class="celebrity-head">');
-      $head.append($('<img src="/media/celebrity_heads/' + celeb.image + '">'))
-      $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
-      $head.hover(function() {
-        $celebrityHeadBio.text(celeb.bio);
-      });
-      $celebrityHeadZone.append($head);
-
-      if (idx === 0) {
-        $celebrityHeadBio.text(celeb.bio);
-      }
-    });
-  });
-
-  generateCompositeImage(bestContent, function(compositeImage) {
-    var $img = $(compositeImage);
-    $img.css('max-width', '100%');
-    $popularityShareZone.append($img);
-
+  generateCompositeCanvas(bestContent, function(compositeCanvas) {
+    var $canvas = $(compositeCanvas);
+    $canvas.css('max-width', '100%');
+    $popularityShareZone.append($canvas);
     $popularityShareZone.fadeIn();
-    $celebrityHeadZone.fadeIn();
-    $celebrityHeadBio.fadeIn();
+
+    var context = compositeCanvas.getContext('2d');
+
+    $.getJSON('/media/celebrities.json', function(celebrities) {
+      celebrities.forEach(function(celeb, idx) {
+        var $head = $('<div class="celebrity-head">');
+        $head.append($('<img src="/media/celebrity_heads/' + celeb.image + '">'));
+        $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+        $head.hover(function() {
+          $celebrityHeadBio.text(celeb.bio);
+        });
+        $head.click(function() {
+          if (hasSharedToFacebook) {
+            return;
+          }
+
+          var width = Math.random() * 120 + 80;
+          var randomRect = {
+            x: Math.random() * (compositeCanvas.width - width),
+            y: Math.random() * (compositeCanvas.height - width),
+            w: width,
+            h: width
+          };
+          context.shadowColor = color.randomColor();
+          drawImageFromUrl('/media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+        });
+        $celebrityHeadZone.append($head);
+
+        if (idx === 0) {
+          $celebrityHeadBio.text(celeb.bio);
+        }
+      });
+    });
+
+    setTimeout(function() {
+      $celebrityHeadZone.fadeIn();
+      $celebrityHeadBio.fadeIn();
+
+      setTimeout(function() {
+        var $celebrityHeadTip = $('<div class="celebrity-head-tip">Your Life Score has earned you valuable celebrities! Click their heads to personalize your Life in Review Collage, then share to Facebook below!</div>');
+        $('body').append($celebrityHeadTip);
+
+        var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
+        $shareButton.click(function() {
+          if (!hasSharedToFacebook) {
+            shareCanvasToFacebook(compositeCanvas);
+            $('.celebrity-head').css('pointer', 'auto');
+            hasSharedToFacebook = true;
+          }
+        });
+        $('body').append($shareButton);
+
+        $celebrityHeadTip.fadeIn();
+        $shareButton.fadeIn();
+      }, 500);
+    }, 3000);
   });
+}
+
+function shareCanvasToFacebook(canvas) {
+  var imageData = canvas.toDataURL("image/jpeg");
+  console.log(imageData);
 }
 
 /// Calculation
@@ -222,7 +267,7 @@ function renderedBestLikes(likes) {
 
 /// Image Generation
 
-function generateCompositeImage(bestContent, callback) {
+function generateCompositeCanvas(bestContent, callback) {
   var canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1024;
 
@@ -258,10 +303,8 @@ function generateCompositeImage(bestContent, callback) {
 
     drawBrandElements();
 
-    var image = new Image();
-    image.src = canvas.toDataURL("image/jpeg");
     if (callback) {
-      callback(image);
+      callback(canvas);
     }
   }
 
@@ -287,7 +330,7 @@ function generateCompositeImage(bestContent, callback) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.01);
+    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
 
     if (event.cover && event.cover.source) {
       imagesToLoad += 1;
@@ -296,7 +339,7 @@ function generateCompositeImage(bestContent, callback) {
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.001);
+    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
 
     if (like.cover && like.cover.source) {
       imagesToLoad += 1;
