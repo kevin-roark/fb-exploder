@@ -88,7 +88,7 @@ function enterSharingState(bestContent) {
 
   generateCompositeCanvas(bestContent, function(compositeCanvas) {
     var $canvas = $(compositeCanvas);
-    $canvas.css('max-width', '100%');
+    $canvas.css('max-width', '666px');
     $popularityShareZone.append($canvas);
     $popularityShareZone.fadeIn();
 
@@ -136,9 +136,24 @@ function enterSharingState(bestContent) {
         var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
         $shareButton.click(function() {
           if (!hasSharedToFacebook) {
-            shareCanvasToFacebook(compositeCanvas);
-            $('.celebrity-head').css('pointer', 'auto');
             hasSharedToFacebook = true;
+            $('.celebrity-head').css('pointer', 'auto');
+
+            shareCanvasToFacebook(compositeCanvas, function() {
+              $popularityShareWrapper.hide();
+              $celebrityHeadZone.hide();
+              $celebrityHeadBio.hide();
+              $celebrityHeadTip.hide();
+              $shareButton.hide();
+              $('.popularity-zone').animate({opacity: 0.05}, 9000);
+
+              var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
+              $('body').append($thanks);
+              $thanks.fadeIn();
+              setTimeout(function() {
+                $thanks.fadeOut(6666);
+              }, 3666);
+            });
           }
         });
         $('body').append($shareButton);
@@ -150,7 +165,7 @@ function enterSharingState(bestContent) {
   });
 }
 
-function shareCanvasToFacebook(canvas) {
+function shareCanvasToFacebook(canvas, callback) {
   // share image first
   uploadCanvasToCloudinary(canvas, function(error, imageURL) {
     if (!imageURL) {
@@ -169,15 +184,24 @@ function shareCanvasToFacebook(canvas) {
       description: 'Life in Review scores you!'
     }, function(response) {
       console.log(response);
-      var success = !response.error_code;
+      var success = response && !response.error_code;
+      if (callback) {
+        callback(success);
+      }
     });
   });
 }
 
 function uploadCanvasToCloudinary(canvas, callback) {
+  var $loading = $('<div class="dreamy-message">').text('Loading...').css('display', 'none');
+  $('body').append($loading);
+  $loading.fadeIn();
+
   var $input = $('<input/>').attr('type', 'file').attr('name', 'imageFileInput');
   $input.unsigned_cloudinary_upload('tokggrfz', { cloud_name: 'carmichael-payamps'})
         .bind('cloudinarydone', function(e, data) {
+          $loading.fadeOut();
+
           if (data.result && data.result.url) {
             if (callback) {
               callback(null, data.result.url);

@@ -20,7 +20,7 @@ $(function() {
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
-    baseText: 'Gathering your Facebook data'
+    baseText: 'Gathering and Crunching your Facebook data'
   });
   var friendsSound = new buzz.sound('/media/friends', {
     formats: ['mp3'],
