@@ -146,13 +146,55 @@ function enterSharingState(bestContent) {
         $celebrityHeadTip.fadeIn();
         $shareButton.fadeIn();
       }, 500);
-    }, 3000);
+    }, 800);
   });
 }
 
 function shareCanvasToFacebook(canvas) {
-  var imageData = canvas.toDataURL("image/jpeg");
-  console.log(imageData);
+  // share image first
+  uploadCanvasToCloudinary(canvas, function(error, imageURL) {
+    if (!imageURL) {
+      // TODO: handle cloudinary failure
+      return;
+    }
+
+    console.log(imageURL);
+
+    // share link to feed with share UI
+    window.FB.ui({
+      method: 'feed',
+      link: 'www.lifeinreview.com',
+      picture: imageURL,
+      caption: 'Check out my Life in Review Score! Please tell me yours?',
+      description: 'Life in Review scores you!'
+    }, function(response) {
+      console.log(response);
+      var success = !response.error_code;
+    });
+  });
+}
+
+function uploadCanvasToCloudinary(canvas, callback) {
+  var $input = $('<input/>').attr('type', 'file').attr('name', 'imageFileInput');
+  $input.unsigned_cloudinary_upload('tokggrfz', { cloud_name: 'carmichael-payamps'})
+        .bind('cloudinarydone', function(e, data) {
+          if (data.result && data.result.url) {
+            if (callback) {
+              callback(null, data.result.url);
+            }
+          }
+          else {
+            console.log('failed to upload image to cloudinary...');
+            console.log(e);
+            if (callback) {
+              callback(e, null);
+            }
+          }
+        });
+
+  var data = canvas.toDataURL('image/jpeg');
+  $input.fileupload('option', 'formData').file = data;
+  $input.fileupload('add', { files: [data] });
 }
 
 /// Calculation
@@ -269,7 +311,8 @@ function renderedBestLikes(likes) {
 
 function generateCompositeCanvas(bestContent, callback) {
   var canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 1024;
+  canvas.width = 1200;
+  canvas.height = 630;
 
   var context = canvas.getContext('2d');
 
@@ -390,7 +433,7 @@ function generateCompositeCanvas(bestContent, callback) {
     var brandSquareWidth = 450;
     var brandSquareHeight = 360;
     var brandSquareX = canvas.width/2 - brandSquareWidth/2;
-    var brandSquareY = canvas.height/2 - brandSquareHeight/1.2;
+    var brandSquareY = canvas.height/2 - brandSquareHeight/2;
     var textX = brandSquareX + 10;
     var textWidth = brandSquareWidth - 20;
 
@@ -438,11 +481,11 @@ function generateCompositeCanvas(bestContent, callback) {
     var x, y;
     if (allowLeakage) {
       x = (width * -0.2) + ((canvas.width - 0.6 * width) * Math.random());
-      y = -100 + ((canvas.height + 200) * Math.random());
+      y = -40 + ((canvas.height + 80) * Math.random());
     }
     else {
       x = (canvas.width - width) * Math.random();
-      y = (canvas.height * 0.85) * Math.random();
+      y = (canvas.height * 0.8) * Math.random();
     }
 
     return {x: x, y: y, w: width};
