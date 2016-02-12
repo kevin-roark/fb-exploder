@@ -1,4 +1,956 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* thanks henry */
+
+function v() {
+  return Math.floor(Math.random() * 256);
+}
+
+module.exports.randomColor = function() {
+  return "rgb(" + v() + "," + v() + ", " + v() + ")";
+};
+
+module.exports.randomBrightColor = function() {
+  var key = Math.floor(Math.random() * 6);
+
+  if (key === 0)
+    return "rgb(" + "0,255," + v() + ")";
+  else if (key === 1)
+    return "rgb(" + "0," + v() + ",255)";
+  else if (key === 2)
+    return "rgb(" + "255, 0," + v() + ")";
+  else if (key === 3)
+    return "rgb(" + "255," + v() + ",0)";
+  else if (key === 4)
+    return "rgb(" + v() + ",255,0)";
+  else
+    return "rgb(" + v() + ",0,255)";
+};
+
+},{}],2:[function(require,module,exports){
+
+var kt = require('kutility');
+var moment = require('moment');
+var fbRenderer = require('./fb-renderer');
+
+var DelayBeforePhotoWaterfall = 6666;
+var DelayBeforePostsWaterfall = 15666;
+var DelayBeforeDataWaterfall = 23666;
+var DelayBeforeDemographicWaterfall = 33666;
+
+var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer, $demographicLayer, orderedLayers;
+$(function() {
+  $container = $('#content-container');
+
+  function makeLayer(id) { var $layer = $('<div class="content-layer" id="' + id + '"></div>'); $container.append($layer); return $layer; }
+
+  $photosLayer = makeLayer('photos-layer');
+  $albumsLayer = makeLayer('albums-layer');
+  $postsLayer = makeLayer('posts-layer');
+  $likesLayer = makeLayer('likes-layer');
+  $eventsLayer = makeLayer('events-layer');
+  $placesLayer = makeLayer('places-layer');
+  $groupsLayer = makeLayer('groups-layer');
+  $demographicLayer = makeLayer('demographic-layer');
+  orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $demographicLayer];
+});
+
+var updateFunctions = [];
+var shouldUpdate = true;
+
+/// Public
+
+module.exports.start = function _start(dump) {
+  if (dump.albums) {
+    handleAlbums(dump.albums.data);
+  }
+
+  setTimeout(function() {
+    if (dump.photos) {
+      handlePhotos(dump.photos.data);
+    }
+  }, DelayBeforePhotoWaterfall);
+
+  setTimeout(function() {
+    if (dump.posts) {
+      handlePosts(dump.posts.data);
+    }
+  }, DelayBeforePostsWaterfall);
+
+  setTimeout(function() {
+    if (dump.likes) {
+      handleLikes(dump.likes.data);
+    }
+    if (dump.events) {
+      handleEvents(dump.events.data);
+    }
+    if (dump.tagged_places) {
+      handlePlaces(dump.tagged_places.data);
+    }
+    // TODO: request groups access
+    // if (response.groups) {
+    //   handleGroups(response.groups.data);
+    // }
+  }, DelayBeforeDataWaterfall);
+
+  setTimeout(function() {
+    setupDemographicStream(dump);
+  }, DelayBeforeDemographicWaterfall);
+};
+
+module.exports.update = function _update() {
+  for (var i = 0; i < updateFunctions.length; i++) {
+    updateFunctions[i]();
+  }
+};
+
+module.exports.mouseUpdate = function _mouseUpdate(x) {
+  // nice reference for 3d css effects: http://tympanus.net/Development/StackEffects/
+
+  var xPercent = x / window.innerWidth;
+  var halfWidth = window.innerWidth / 2;
+  var normalizedXPercent = xPercent > 0.5 ? (x - halfWidth) / halfWidth : (halfWidth - x) / halfWidth;
+
+  var containerRotation = 0; //xPercent * 10 - 5;
+  $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
+
+  var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 100;
+  if (xPercent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
+
+  for (var i = 0; i < orderedLayers.length; i++) {
+    var $layer = orderedLayers[i];
+    var xTranslation = (i / (orderedLayers.length - 1)) * xTranslationMagnitude;
+    var yTranslation = 0;
+    $layer.css('transform', 'translate(' + xTranslation + 'px, ' + yTranslation + 'px)');
+  }
+};
+
+module.exports.setShouldUpdate = function _setShouldUpdate(should) {
+  shouldUpdate = should;
+};
+
+/// Private
+
+function handlePhotos(photos) {
+  if (!photos) {
+    return;
+  }
+
+  var PhotoOffscreenBuffer = 200;
+
+  var photoIndex = 0;
+  var activeRenderedPhotos = [];
+
+  var columnWidths = kt.shuffle([0.3, 0.2, 0.15, 0.15, 0.1, 0.05, 0.05]);
+  var columnSpeeds = kt.shuffle([2, 2, 2, 3, 3, 4, 5]);
+  var columnOffsets = [0];
+  for (var offsetIndex = 1; offsetIndex < columnWidths.length; offsetIndex++) {
+    var accumlatedOffset = columnOffsets[offsetIndex - 1];
+    var lastItemWidth = columnWidths[offsetIndex - 1];
+    columnOffsets.push(accumlatedOffset + lastItemWidth);
+  }
+
+  function nextPhoto() {
+    if (photoIndex >= photos.length) {
+      photoIndex = 0;
+    }
+    return photos[photoIndex++];
+  }
+
+  function addPhotoToColumn(idx) {
+    var photo = nextPhoto();
+
+    var width = columnWidths[idx];
+    var leftOffset = columnOffsets[idx];
+
+    var $html = fbRenderer.renderedPhoto(photo);
+    $html.css('left', (leftOffset * 100) + '%');
+    $html.css('width', (width * 100) + '%');
+    $html.css('top', 0);
+
+    $html._columnIndex = idx;
+    $html._renderedHeight = (photo.height / photo.width) * width; // unit is decimal percentage of window width
+    $html._yOffset = -($html._renderedHeight * window.innerWidth) - PhotoOffscreenBuffer;
+    updateYTranslation($html);
+
+    activeRenderedPhotos.push($html);
+    $photosLayer.append($html);
+  }
+
+  for (var i = 0; i < columnWidths.length; i++) {
+    addPhotoToColumn(i);
+  }
+
+  updateFunctions.push(function updatePhotos() {
+    for (var i = 0; i < activeRenderedPhotos.length; i++) {
+      var $html = activeRenderedPhotos[i];
+
+      // move it down
+      var speed = columnSpeeds[$html._columnIndex];
+      updateYTranslation($html, speed);
+
+      // add a new guy if necessary
+      if ($html._yOffset > -PhotoOffscreenBuffer && !$html._hasBecomeVisible) {
+        addPhotoToColumn($html._columnIndex);
+        $html._hasBecomeVisible = true;
+      }
+
+      // trim if now offscreen
+      if ($html._yOffset > window.innerHeight) {
+        $html.remove();
+        removeFromArray(activeRenderedPhotos, $html);
+      }
+    }
+  });
+}
+
+function handleAlbums(albums) {
+  if (!albums) { return; }
+
+  // gather the photos
+  var albumPhotos = [];
+  for (var i = 0; i < albums.length; i++) {
+    var album = albums[i];
+    if (!album.photos) { continue; }
+
+    var photos = album.photos.data;
+    for (var j = 0; j < photos.length; j++) {
+      albumPhotos.push(photos[j]);
+    }
+  }
+
+  setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
+    minWidth: 100,
+    widthVariance: 350,
+    minDelay: 400,
+    delayVariance: 1000
+  });
+}
+
+function handlePosts(posts) {
+  if (!posts) { return; }
+
+  setupDataStream(posts, fbRenderer.renderedPost, $postsLayer);
+}
+
+function handleLikes(likes) {
+  if (!likes) { return; }
+
+  setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
+}
+
+
+function handleEvents(events) {
+  if (!events) { return; }
+
+  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
+}
+
+function handlePlaces(places) {
+  if (!places) { return; }
+
+  setupDataStream(places, fbRenderer.renderedPlace, $placesLayer);
+}
+
+function handleGroups(groups) {
+  if (!groups) { return; }
+
+  setupDataStream(groups, fbRenderer.renderedGroup, $groupsLayer);
+}
+
+function setupDemographicStream(fbData) {
+  var demographicText = [];
+
+  if (fbData.age_range.min) {
+    demographicText.push(fbData.name + ' is at least ' + fbData.age_range.min + ' years old');
+  }
+
+  if (fbData.bio) {
+    demographicText.push(fbData.name + "'s bio: " + fbData.bio);
+  }
+
+  if (fbData.birthday) {
+    demographicText.push(fbData.name + ' was born on ' + fbData.birthday);
+  }
+
+  if (fbData.education) {
+    fbData.education.forEach(function(education) {
+      var text = fbData.name + ' attended ' + education.school.name;
+      if (education.year) { text += ' until ' + education.year.name; }
+      demographicText.push(text);
+    });
+  }
+
+  if (fbData.family && fbData.family.data) {
+    fbData.family.data.forEach(function(family) {
+      demographicText.push(family.name + ' is ' + fbData.name + "'s " + family.relationship);
+    });
+  }
+
+  if (fbData.hometown) {
+    demographicText.push(fbData.hometown.name + ' is ' + fbData.name + "'s hometown");
+  }
+
+  if (fbData.location) {
+    demographicText.push(fbData.name + ' lives in ' + fbData.location.name);
+  }
+
+  if (fbData.relationship_status) {
+    demographicText.push(fbData.name + ' is ' + fbData.relationship_status);
+  }
+
+  if (fbData.work) {
+    fbData.work.forEach(function(work) {
+      var text = fbData.name + ' worked at ' + work.employer.name;
+      if (work.location) { text += ' at ' + work.location.name; }
+      if (work.position) { text += ' with the title of ' + work.position.name; }
+      if (work.start_date || work.end_date) {
+        var start = work.start_date ? moment(work.start_date).format('MMMM YYYY') : null;
+        var end = work.end_date ? moment(work.end_date).format('MMMM YYYY') : null;
+        if (start && end) {
+          text += ' from ' + start + ' until ' + end;
+        }
+        else if (start) {
+          text += ', starting on ' + start;
+        }
+        else {
+          text += ' until ' + end;
+        }
+      }
+      demographicText.push(text);
+    });
+  }
+
+  demographicText = kt.shuffle(demographicText);
+
+  setupDataStream(demographicText, fbRenderer.renderedDemographicText, $demographicLayer);
+}
+
+function setupDataStream(data, renderer, $layer, options) {
+  if (!data || !renderer || !$layer) {
+    return;
+  }
+  if (!options) {
+    options = {};
+  }
+
+  var minWidth = options.minWidth || 200;
+  var widthVariance = options.widthVariance || 150;
+  var minSpeed = options.minSpeed || 4;
+  var maxSpeed = options.maxSpeed || 10;
+  var minDelay = options.minDelay || 3000;
+  var delayVariance = options.delayVariance || 5000;
+
+  var dataIndex = 0;
+  var activeRenderedElements = [];
+
+  function doNextItem() {
+    var delay = Math.random() * delayVariance + minDelay;
+    setTimeout(doNextItem, delay);
+
+    if (!shouldUpdate) {
+      return;
+    }
+
+    if (dataIndex >= data.length) {
+      dataIndex = 0;
+    }
+    var item = data[dataIndex++];
+
+    var $html = renderer(item);
+    var width = Math.random() * widthVariance + minWidth;
+    $html.css('width', width + 'px');
+    $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
+    $html.css('top', '0');
+    $html._speed = kt.randInt(minSpeed, maxSpeed);
+    $html._yOffset = -500;
+    updateYTranslation($html);
+
+    activeRenderedElements.push($html);
+    $layer.append($html);
+  }
+
+  doNextItem();
+
+  updateFunctions.push(function updateItems() {
+    for (var i = 0; i < activeRenderedElements.length; i++) {
+      var $html = activeRenderedElements[i];
+      updateYTranslation($html, $html._speed);
+
+      // trim if now offscreen
+      if ($html._yOffset > window.innerHeight + 20) {
+        $html.remove();
+        removeFromArray(activeRenderedElements, $html);
+      }
+    }
+  });
+}
+
+/// Util
+
+function updateYTranslation($html, speed) {
+  if (speed) {
+    $html._yOffset += speed;
+  }
+
+  $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
+}
+
+function removeFromArray(arr, el) {
+  var idx = arr.indexOf(el);
+  if (idx > -1) {
+    arr.splice(idx, 1);
+  }
+}
+
+},{"./fb-renderer":4,"kutility":11,"moment":12}],3:[function(require,module,exports){
+
+var fbRenderer = require('./fb-renderer');
+var multiline = require('./lib/multiline');
+var color = require('./color');
+
+var PiecesToShow = 3;
+var LikeValue = 1;
+var CommentValue = 2;
+var ShareValue = 3;
+
+var $container;
+$(function() {
+  $container = $('#content-container');
+});
+
+/// State
+
+module.exports.start = function _start(dump, finishedCallback) {
+  var hasEnteredSharingState = false;
+
+  var bestPhotos = dump.photos ? calculateBestElements(dump.photos.data, calculateStandardPoints) : [];
+  var bestPosts = dump.posts ? calculateBestElements(dump.posts.data, calculateStandardPoints) : [];
+  var bestLikes = dump.likes ? calculateBestElements(dump.likes.data, calculateLikePoints) : [];
+  var bestEvents = dump.events ? calculateBestElements(dump.events.data, calculateEventPoints) : [];
+  var bestContent = {photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents};
+  console.log(bestContent);
+
+  var $popularityZone = $('<div class="popularity-zone"></div>');
+  $container.append($popularityZone);
+
+  var $bestPhotos = renderedBestPhotos(bestPhotos);
+  $popularityZone.append($bestPhotos);
+
+  var $bestPosts = renderedBestPosts(bestPosts);
+  $popularityZone.append($bestPosts);
+
+  var $bestEvents = renderedBestEvents(bestEvents);
+  $popularityZone.append($bestEvents);
+
+  var $bestLikes = renderedBestLikes(bestLikes);
+  $popularityZone.append($bestLikes);
+
+  var $shareButtonWrapper = $('<div style="text-align: center; width: 100%;"></div>');
+  var $collageButton = $('<div class="shadow-button facebook-style-button" id="generate-collage-button">Share your own Life in Review collage!</div>');
+  $collageButton.css('opacity', '0');
+  $collageButton.click(function() {
+    if (hasEnteredSharingState) {
+      return;
+    }
+
+    enterSharingState(bestContent);
+  });
+  $shareButtonWrapper.append($collageButton);
+  $popularityZone.append($shareButtonWrapper);
+
+  $bestPhotos.animate({opacity: 1}, 800);
+  setTimeout(function() {
+    $bestPosts.animate({opacity: 1}, 800);
+  }, 500);
+  setTimeout(function() {
+    $bestEvents.animate({opacity: 1}, 800);
+  }, 1000);
+  setTimeout(function() {
+    $bestLikes.animate({opacity: 1}, 800);
+  }, 1500);
+  setTimeout(function() {
+    $collageButton.animate({opacity: 1}, 800);
+  }, 1600);
+
+  //setTimeout(finishedCallback, 30000);
+};
+
+function enterSharingState(bestContent) {
+  var hasSharedToFacebook = false;
+
+  var $popularityShareWrapper = $('<div class="popularity-share-wrapper">');
+  $container.append($popularityShareWrapper);
+  $popularityShareWrapper.fadeIn(1500);
+
+  var $popularityShareZone = $('<div class="popularity-share-zone">');
+  $popularityShareWrapper.append($popularityShareZone);
+
+  var $celebrityHeadZone = $('<div class="celebrity-head-zone">');
+  $('body').append($celebrityHeadZone);
+
+  var $celebrityHeadBio = $('<div class="celebrity-head-bio">');
+  $('body').append($celebrityHeadBio);
+
+  generateCompositeCanvas(bestContent, function(compositeCanvas) {
+    var $canvas = $(compositeCanvas);
+    $canvas.css('max-width', '666px');
+    $popularityShareZone.append($canvas);
+    $popularityShareZone.fadeIn();
+
+    var context = compositeCanvas.getContext('2d');
+
+    $.getJSON('media/celebrities.json', function(celebrities) {
+      celebrities.forEach(function(celeb, idx) {
+        var $head = $('<div class="celebrity-head">');
+        $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
+        $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+        $head.hover(function() {
+          $celebrityHeadBio.text(celeb.bio);
+        });
+        $head.click(function() {
+          if (hasSharedToFacebook) {
+            return;
+          }
+
+          var width = Math.random() * 120 + 80;
+          var randomRect = {
+            x: Math.random() * (compositeCanvas.width - width),
+            y: Math.random() * (compositeCanvas.height - width),
+            w: width,
+            h: width
+          };
+          context.shadowColor = color.randomColor();
+          drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+        });
+        $celebrityHeadZone.append($head);
+
+        if (idx === 0) {
+          $celebrityHeadBio.text(celeb.bio);
+        }
+      });
+    });
+
+    setTimeout(function() {
+      $celebrityHeadZone.fadeIn();
+      $celebrityHeadBio.fadeIn();
+
+      setTimeout(function() {
+        var $celebrityHeadTip = $('<div class="celebrity-head-tip">Your Life Score has earned you valuable celebrities! Click their heads to personalize your Life in Review Collage, then share to Facebook below!</div>');
+        $('body').append($celebrityHeadTip);
+
+        var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
+        $shareButton.click(function() {
+          if (!hasSharedToFacebook) {
+            hasSharedToFacebook = true;
+            $('.celebrity-head').css('pointer', 'auto');
+
+            shareCanvasToFacebook(compositeCanvas, function() {
+              $popularityShareWrapper.hide();
+              $celebrityHeadZone.hide();
+              $celebrityHeadBio.hide();
+              $celebrityHeadTip.hide();
+              $shareButton.hide();
+              $('.popularity-zone').animate({opacity: 0.05}, 9000);
+
+              var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
+              $('body').append($thanks);
+              $thanks.fadeIn();
+              setTimeout(function() {
+                $thanks.fadeOut(6666);
+              }, 3666);
+            });
+          }
+        });
+        $('body').append($shareButton);
+
+        $celebrityHeadTip.fadeIn();
+        $shareButton.fadeIn();
+      }, 500);
+    }, 800);
+  });
+}
+
+function shareCanvasToFacebook(canvas, callback) {
+  // share image first
+  uploadCanvasToCloudinary(canvas, function(error, imageURL) {
+    if (!imageURL) {
+      // TODO: handle cloudinary failure
+      return;
+    }
+
+    console.log(imageURL);
+
+    // share link to feed with share UI
+    window.FB.ui({
+      method: 'feed',
+      link: 'www.lifeinreview.com',
+      picture: imageURL,
+      caption: 'Check out my Life in Review Score! Please tell me yours?',
+      description: 'Life in Review scores you!'
+    }, function(response) {
+      console.log(response);
+      var success = response && !response.error_code;
+      if (callback) {
+        callback(success);
+      }
+    });
+  });
+}
+
+function uploadCanvasToCloudinary(canvas, callback) {
+  var $loading = $('<div class="dreamy-message">').text('Loading...').css('display', 'none');
+  $('body').append($loading);
+  $loading.fadeIn();
+
+  var $input = $('<input/>').attr('type', 'file').attr('name', 'imageFileInput');
+  $input.unsigned_cloudinary_upload('tokggrfz', { cloud_name: 'carmichael-payamps'})
+        .bind('cloudinarydone', function(e, data) {
+          $loading.fadeOut();
+
+          if (data.result && data.result.url) {
+            if (callback) {
+              callback(null, data.result.url);
+            }
+          }
+          else {
+            console.log('failed to upload image to cloudinary...');
+            console.log(e);
+            if (callback) {
+              callback(e, null);
+            }
+          }
+        });
+
+  var data = canvas.toDataURL('image/jpeg');
+  $input.fileupload('option', 'formData').file = data;
+  $input.fileupload('add', { files: [data] });
+}
+
+/// Calculation
+
+function calculateBestElements(elements, pointCalculator) {
+  if (!elements) return [];
+
+  // sort elements in descending order by points
+  var sortedElements = elements.sort(function(a, b) {
+    return pointCalculator(b) - pointCalculator(a);
+  });
+
+  return sortedElements.slice(0, PiecesToShow);
+}
+
+function calculateStandardPoints(item) {
+  var stats = calculateStats(item);
+  var likePoints = stats.likes * LikeValue;
+  var sharePoints = stats.shares * ShareValue;
+  var commentPoints = stats.comments * CommentValue;
+  return likePoints + sharePoints + commentPoints;
+}
+
+function calculateLikePoints(like) { return like.likes; }
+
+function calculateEventPoints(event) { return event.attending_count ? event.attending_count : 0; }
+
+function calculateStats(item) {
+  return {
+    likes: item.likes && item.likes.summary ? item.likes.summary.total_count : 0,
+    shares: item.shares ? item.shares.count : 0,
+    comments: item.comments && item.comments.summary ? item.comments.summary.total_count : 0
+  };
+}
+
+/// Dom Rendering
+
+function renderedBestPhotos(photos) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
+
+  for (var i = 0; i < photos.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>');
+    $el.append($wrapper);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
+  }
+
+  return $el;
+}
+
+function renderedBestPosts(posts) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Posts</div>'));
+
+  for (var i = 0; i < posts.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $el.append($wrapper);
+
+    var $post = fbRenderer.renderedPost(posts[i]);
+    $post.addClass('popularity-element');
+    $post.css('position', 'relative');
+    $wrapper.append($post);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(posts[i]) + '</div>'));
+  }
+
+  return $el;
+}
+
+function renderedBestEvents(events) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Events</div>'));
+
+  for (var i = 0; i < events.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $el.append($wrapper);
+
+    var $event = fbRenderer.renderedEvent(events[i]);
+    $event.addClass('popularity-element');
+    $event.css('position', 'relative');
+    $wrapper.append($event);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateEventPoints(events[i]) + '</div>'));
+  }
+
+  return $el;
+}
+
+function renderedBestLikes(likes) {
+  var $el = $('<div class="popularity-section"></div>');
+
+  $el.append($('<div class="popularity-section-header">Your Best And Most Popular Likes</div>'));
+
+  for (var i = 0; i < likes.length; i++) {
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
+    $el.append($wrapper);
+
+    var $like = fbRenderer.renderedLike(likes[i]);
+    $like.addClass('popularity-element');
+    $like.css('position', 'relative');
+    $wrapper.append($like);
+
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateLikePoints(likes[i]) + '</div>'));
+  }
+
+  return $el;
+}
+
+/// Image Generation
+
+function generateCompositeCanvas(bestContent, callback) {
+  var canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 630;
+
+  var context = canvas.getContext('2d');
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  context.shadowBlur = 20;
+  context.shadowOffsetX = 12;
+  context.shadowOffsetY = 12;
+
+  var imagesToLoad = 0;
+  var totalPoints = 0;
+  var hasFinished = false;
+
+  function imageFinishedDrawing() {
+    imagesToLoad -= 1;
+    if (imagesToLoad === 0) {
+      finish();
+    }
+  }
+
+  function finish() {
+    if (hasFinished) {
+      return;
+    }
+
+    hasFinished = true;
+
+    drawTextElements();
+
+    drawBrandElements();
+
+    if (callback) {
+      callback(canvas);
+    }
+  }
+
+  bestContent.photos.forEach(function(photo) {
+    totalPoints += calculateStandardPoints(photo);
+
+    imagesToLoad += 1;
+
+    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
+    var height = (photo.height / photo.width) * width;
+    var x = (canvas.width - width * 0.8) * Math.random();
+    var y = (canvas.height - height * 0.8) * Math.random();
+    drawImageFromUrl(photo.picture, context, {x: x, y: y, w: width, h: height}, imageFinishedDrawing);
+  });
+
+  bestContent.posts.forEach(function(post) {
+    totalPoints += calculateStandardPoints(post);
+
+    if (post.picture) {
+      imagesToLoad += 1;
+      drawArbitraryImage(post.picture, imageFinishedDrawing);
+    }
+  });
+
+  bestContent.events.forEach(function(event) {
+    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
+
+    if (event.cover && event.cover.source) {
+      imagesToLoad += 1;
+      drawArbitraryImage(event.cover.source, imageFinishedDrawing);
+    }
+  });
+
+  bestContent.likes.forEach(function(like) {
+    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
+
+    if (like.cover && like.cover.source) {
+      imagesToLoad += 1;
+      drawArbitraryImage(like.cover.source, imageFinishedDrawing);
+    }
+  });
+
+  function drawTextElements() {
+    context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    context.shadowBlur = 1;
+    context.shadowOffsetX = 2;
+    context.shadowOffsetY = 2;
+
+    context.fillStyle = "#111111";
+    context.font = '20px "Helvetica, Arial, sans-serif"';
+    context.__fontSize = 20;
+
+    bestContent.posts.forEach(function(post) {
+      if (post.message) {
+        drawArbitraryText(post.message);
+      }
+    });
+
+    bestContent.events.forEach(function(event) {
+      var goingText = event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied';
+      drawArbitraryText(goingText);
+
+      context.save();
+      context.font = 'bold 24px "Times New Roman"';
+      context.__fontSize = 24;
+      drawArbitraryText(event.name);
+      context.restore();
+    });
+
+    bestContent.likes.forEach(function(like) {
+      var likeText = like.likes && like.likes > 1 ? like.likes + ' people like this.' : '1 person likes this';
+      drawArbitraryText(likeText);
+
+      context.save();
+      context.font = 'bold 24px "Times New Roman"';
+      context.__fontSize = 24;
+      drawArbitraryText(like.name);
+      context.restore();
+    });
+  }
+
+  function drawBrandElements() {
+    var brandSquareWidth = 450;
+    var brandSquareHeight = 360;
+    var brandSquareX = canvas.width/2 - brandSquareWidth/2;
+    var brandSquareY = canvas.height/2 - brandSquareHeight/2;
+    var textX = brandSquareX + 10;
+    var textWidth = brandSquareWidth - 20;
+
+    context.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    context.shadowBlur = 40;
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
+
+    context.fillStyle = '#ffffff';
+    context.fillRect(brandSquareX, brandSquareY, brandSquareWidth, brandSquareHeight);
+
+    context.fillStyle = '#111111';
+    context.shadowColor = 'rgba(0, 0, 0, 0)';
+    context.font = '24px "Times New Roman"';
+    context.fillText('I looked at my Life In Review...', textX, brandSquareY + 40, textWidth);
+
+    context.save();
+    context.textAlign = 'center';
+    context.shadowColor = 'rgb(135, 88, 203)';
+    context.shadowBlur = 4;
+    context.shadowOffsetX = 3;
+    context.shadowOffsetY = 3;
+    context.fillStyle = 'rgb(233, 30, 30)';
+    context.font = 'bold 64px "Times New Roman"';
+    context.fillText('I SCORED', canvas.width/2, brandSquareY + 120, brandSquareWidth - 20);
+    context.fillText(totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.restore();
+
+    context.fillText('What do you score?', textX, brandSquareY + 240, textWidth);
+    context.fillText('Let me know in the comments below.', textX, brandSquareY + 270, textWidth);
+
+    context.textAlign = 'center';
+    context.shadowColor = 'rgb(235, 233, 28)';
+    context.shadowBlur = 4;
+    context.shadowOffsetX = 3;
+    context.shadowOffsetY = 3;
+    context.fillStyle = 'rgb(30, 233, 63)';
+    context.font = 'bold 26px "Times New Roman"';
+    context.fillText('CARMICHAEL HELPED ME', canvas.width/2, brandSquareY + 320, brandSquareWidth - 20);
+  }
+
+  function arbitraryRect(allowLeakage) {
+    var width = (Math.random() * 0.25 + 0.2) * canvas.width;
+
+    var x, y;
+    if (allowLeakage) {
+      x = (width * -0.2) + ((canvas.width - 0.6 * width) * Math.random());
+      y = -40 + ((canvas.height + 80) * Math.random());
+    }
+    else {
+      x = (canvas.width - width) * Math.random();
+      y = (canvas.height * 0.8) * Math.random();
+    }
+
+    return {x: x, y: y, w: width};
+  }
+
+  function drawArbitraryImage(imageURL, callback) {
+    var pictureRect = arbitraryRect(true);
+    drawImageFromUrl(imageURL, context, pictureRect, callback);
+  }
+
+  function drawArbitraryText(text) {
+    var messageRect = arbitraryRect(false);
+    multiline.draw(context, text, context.__fontSize, messageRect.x, messageRect.y, messageRect.w);
+  }
+}
+
+function drawImageFromUrl(url, context, rect, callback) {
+  var img = new Image();
+  img.setAttribute('crossOrigin', '*');
+
+  img.onload = function() {
+    if (!rect.h) {
+      var aspectRatio = img.width / img.height;
+      rect.h = rect.w / aspectRatio;
+    }
+
+    context.drawImage(img, rect.x, rect.y, rect.w, rect.h);
+    if (callback) {
+      callback();
+    }
+  };
+
+  img.src = url;
+}
+
+},{"./color":1,"./fb-renderer":4,"./lib/multiline":7}],4:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');
@@ -74,7 +1026,7 @@ module.exports.renderedLike = function _renderedLike(like) {
   var likes = div('fb-like-likes', like.likes && like.likes > 1 ? like.likes + ' people like this.' : '1 person likes this');
   html += div('fb-like-text-content', title + likes);
 
-  html += '<img class="fb-likes-liked-button" src="/media/liked.jpg" alt="liked" />';
+  html += '<img class="fb-likes-liked-button" src="media/liked.jpg" alt="liked" />';
 
   html += '</div>';
 
@@ -114,7 +1066,7 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   var when = div('fb-event-when', formattedDate(event.start_time));
   var venue = div('fb-event-venue', event.place.name);
   var who = div('fb-event-who', event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied');
-  var goingImage = '<img class="fb-event-going-image" src="/media/going.jpg" alt="Going" />';
+  var goingImage = '<img class="fb-event-going-image" src="media/going.jpg" alt="Going" />';
   html += div('fb-event-data', name + when + venue + who + goingImage);
 
   // finisher
@@ -163,7 +1115,7 @@ module.exports.renderedGroup = function _renderedGroup(group) {
   var privacy = div('fb-group-privacy', group.privacy.toLowerCase() + ' group');
   html += div('fb-group-cover-text', name + privacy);
 
-  var joined = '<img class="fb-group-joined-image" src="/media/joined.jpg"  alt="joined group" />';
+  var joined = '<img class="fb-group-joined-image" src="media/joined.jpg"  alt="joined group" />';
 
   if (group.cover) {
     html += '<img class="fb-group-cover" src="' + group.cover.source + '" alt="group pic">';
@@ -207,11 +1159,11 @@ function renderedPostHeader(post) {
 }
 
 function renderedStats(post) {
-  var likeCount = post.likes ? post.likes.data.length : 0;
+  var likeCount = post.likes && post.likes.summary ? post.likes.summary.total_count : 0;
   var likeText = likeCount === 1 ? 'like' : 'likes';
   var shareCount = post.shares ? post.shares.count : 0;
   var shareText = shareCount === 1 ? 'share' : 'shares';
-  var commentCount = post.comments ? post.comments.data.length : 0;
+  var commentCount = post.comments && post.comments.summary ? post.comments.summary.total_count : 0;
   var commentText = commentCount === 1 ? 'comment' : 'comments';
 
   var html = '<div class="fb-post-data">';
@@ -244,7 +1196,7 @@ function span(className, content) {
   return '<span class="' + className + '">' + content + '</span>';
 }
 
-},{"kutility":7,"moment":8}],2:[function(require,module,exports){
+},{"kutility":11,"moment":12}],5:[function(require,module,exports){
 
 var TEST_MODE = true;
 
@@ -302,9 +1254,9 @@ module.exports.meDump = function(callback) {
     return field + '.limit(' + count + ')';
   }
 
-  var photosField = limit('photos') + '{width,height,name,updated_time,picture,comments,tags,likes}';
+  var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
-  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,message_tags,likes,comments}';
+  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
   var placesField = limit('tagged_places') + '{created_time,place{name}}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
@@ -325,7 +1277,7 @@ module.exports.meDump = function(callback) {
   api('/me?fields=' + combinedFields, callback);
 };
 
-},{}],3:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
  // ----------------------------------------------------------------------------
  // Buzz, a Javascript HTML5 Audio library
  // v1.1.10 - Built 2015-04-20 13:05
@@ -1056,7 +2008,46 @@ module.exports.meDump = function(callback) {
     };
     return buzz;
 });
-},{}],4:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
+
+// Return an array to iterate over. For my uses this is
+// more efficient, because I only need to calculate the line text
+// and positions once, instead of each iteration during animations.
+module.exports.wrap = function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  var words = text.split(' ')
+    , line = ''
+    , lines = [];
+
+  for(var n = 0, len = words.length; n < len; n++) {
+    var testLine = line + words[n] + ' '
+      , metrics = ctx.measureText(testLine)
+      , testWidth = metrics.width;
+
+    if (testWidth > maxWidth) {
+      lines.push({ text: line, x: x, y: y });
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+
+  lines.push({ text: line, x: x, y: y });
+  return lines;
+};
+
+module.exports.draw = function drawMultiline(context, text, linespacing, x, y, width) {
+  var txt = module.exports.wrap(context, text, x, y, width, linespacing);
+
+  for (var i = 0; i < txt.length; i++){
+    var item = txt[i];
+    context.fillText(item.text, item.x, item.y);
+  }
+
+  return txt[txt.length - 1].y + linespacing;
+};
+
+},{}],8:[function(require,module,exports){
 
 module.exports = LoadingView;
 
@@ -1098,69 +2089,48 @@ LoadingView.prototype.stop = function() {
   this.$el.fadeOut();
 };
 
-},{}],5:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 var TWEEN = require('tween.js');
-var kt = require('kutility');
 var buzz = require('./lib/buzz');
-var moment = require('moment');
 
 require('./shims');
 var fb = require('./fb');
 var fbRenderer = require('./fb-renderer');
 var LoadingView = require('./loading-view');
+var fbGravityStreamer = require('./fb-gravity-streamer');
+var fbPopularityCalculator = require('./fb-popularity-calculator');
+
+var HELLO_STATE = 0;
+var POPULARITY_STATE = 1;
+var GRAVITY_STATE = 2;
 
 $(function() {
 
   /// state
 
-  var $container = $('#content-container');
-  var $photosLayer = $('#photos-layer');
-  var $albumsLayer = $('#albums-layer');
-  var $postsLayer = $('#posts-layer');
-  var $likesLayer = $('#likes-layer');
-  var $eventsLayer = $('#events-layer');
-  var $placesLayer = $('#places-layer');
-  var $groupsLayer = $('#groups-layer');
-  var $demographicLayer = $('#demographic-layer');
-  var orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $demographicLayer];
   var $facebookLoginButton = $('#facebook-login-button');
   var loadingView = new LoadingView({
     $el: $('#loading-view'),
-    baseText: 'Gathering your Facebook data'
+    baseText: 'Gathering and Crunching your Facebook data'
   });
-  var friendsSound = new buzz.sound('/media/friends', {
+  var friendsSound = new buzz.sound('media/friends', {
     formats: ['mp3'],
     webAudioApi: true
   });
-  var updateFunctions = [];
   var shouldUpdate = true;
+  var currentState = HELLO_STATE;
 
   update();
 
   fb.init(function() {
-    friendsSound.loop().play();
+    //friendsSound.loop().play();
     $facebookLoginButton.animate({opacity: 1}, 500);
   });
 
   $(window).mousemove(function(ev) {
-    // nice reference for 3d css effects: http://tympanus.net/Development/StackEffects/
-
-    var xPercent = ev.clientX / window.innerWidth;
-    var halfWidth = window.innerWidth / 2;
-    var normalizedXPercent = xPercent > 0.5 ? (ev.clientX - halfWidth) / halfWidth : (halfWidth - ev.clientX) / halfWidth;
-
-    var containerRotation = 0; //xPercent * 10 - 5;
-    $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
-
-    var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 100;
-    if (xPercent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
-
-    for (var i = 0; i < orderedLayers.length; i++) {
-      var $layer = orderedLayers[i];
-      var xTranslation = (i / (orderedLayers.length - 1)) * xTranslationMagnitude;
-      var yTranslation = 0;
-      $layer.css('transform', 'translate(' + xTranslation + 'px, ' + yTranslation + 'px)');
+    if (currentState === GRAVITY_STATE) {
+      fbGravityStreamer.mouseUpdate(ev.clientX, ev.clientY);
     }
   });
 
@@ -1168,6 +2138,10 @@ $(function() {
     var key = ev.which;
     if (key === 32) {
       shouldUpdate = !shouldUpdate;
+
+      if (currentState === GRAVITY_STATE) {
+        fbGravityStreamer.setShouldUpdate(shouldUpdate);
+      }
     }
   });
 
@@ -1187,31 +2161,12 @@ $(function() {
 
       loadingView.stop();
       fbRenderer.init(response);
+      currentState = POPULARITY_STATE;
 
-      if (response.photos) {
-        handlePhotos(response.photos.data);
-      }
-      if (response.albums) {
-        handleAlbums(response.albums.data);
-      }
-      if (response.posts) {
-        handlePosts(response.posts.data);
-      }
-      if (response.likes) {
-        handleLikes(response.likes.data);
-      }
-      if (response.events) {
-        handleEvents(response.events.data);
-      }
-      if (response.tagged_places) {
-        handlePlaces(response.tagged_places.data);
-      }
-      setupDemographicStream(response);
-
-      // TODO: request groups access
-      // if (response.groups) {
-      //   handleGroups(response.groups.data);
-      // }
+      fbPopularityCalculator.start(response, function finishedPopularity() {
+        currentState = GRAVITY_STATE;
+        fbGravityStreamer.start(response);
+      });
     });
   }
 
@@ -1224,288 +2179,14 @@ $(function() {
 
     TWEEN.update();
 
-    for (var i = 0; i < updateFunctions.length; i++) {
-      updateFunctions[i]();
+    if (currentState === GRAVITY_STATE) {
+      fbGravityStreamer.update();
     }
-  }
-
-  function updateYTranslation($html, speed) {
-    if (speed) {
-      $html._yOffset += speed;
-    }
-
-    $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
-  }
-
-  function removeFromArray(arr, el) {
-    var idx = arr.indexOf(el);
-    if (idx > -1) {
-      arr.splice(idx, 1);
-    }
-  }
-
-  ///
-  /// STREAMING
-  ///
-
-  function handlePhotos(photos) {
-    if (!photos) {
-      return;
-    }
-
-    var PhotoOffscreenBuffer = 200;
-
-    var photoIndex = 0;
-    var activeRenderedPhotos = [];
-
-    var columnWidths = kt.shuffle([0.3, 0.2, 0.15, 0.15, 0.1, 0.05, 0.05]);
-    var columnSpeeds = kt.shuffle([2, 2, 2, 3, 3, 4, 5]);
-    var columnOffsets = [0];
-    for (var offsetIndex = 1; offsetIndex < columnWidths.length; offsetIndex++) {
-      var accumlatedOffset = columnOffsets[offsetIndex - 1];
-      var lastItemWidth = columnWidths[offsetIndex - 1];
-      columnOffsets.push(accumlatedOffset + lastItemWidth);
-    }
-
-    function nextPhoto() {
-      if (photoIndex >= photos.length) {
-        photoIndex = 0;
-      }
-      return photos[photoIndex++];
-    }
-
-    function addPhotoToColumn(idx) {
-      var photo = nextPhoto();
-
-      var width = columnWidths[idx];
-      var leftOffset = columnOffsets[idx];
-
-      var $html = fbRenderer.renderedPhoto(photo);
-      $html.css('left', (leftOffset * 100) + '%');
-      $html.css('width', (width * 100) + '%');
-      $html.css('top', 0);
-
-      $html._columnIndex = idx;
-      $html._renderedHeight = (photo.height / photo.width) * width; // unit is decimal percentage of window width
-      $html._yOffset = -($html._renderedHeight * window.innerWidth) - PhotoOffscreenBuffer;
-      updateYTranslation($html);
-
-      activeRenderedPhotos.push($html);
-      $photosLayer.append($html);
-    }
-
-    for (var i = 0; i < columnWidths.length; i++) {
-      addPhotoToColumn(i);
-    }
-
-    updateFunctions.push(function updatePhotos() {
-      for (var i = 0; i < activeRenderedPhotos.length; i++) {
-        var $html = activeRenderedPhotos[i];
-
-        // move it down
-        var speed = columnSpeeds[$html._columnIndex];
-        updateYTranslation($html, speed);
-
-        // add a new guy if necessary
-        if ($html._yOffset > -PhotoOffscreenBuffer && !$html._hasBecomeVisible) {
-          addPhotoToColumn($html._columnIndex);
-          $html._hasBecomeVisible = true;
-        }
-
-        // trim if now offscreen
-        if ($html._yOffset > window.innerHeight) {
-          $html.remove();
-          removeFromArray(activeRenderedPhotos, $html);
-        }
-      }
-    });
-  }
-
-  function handleAlbums(albums) {
-    if (!albums) { return; }
-
-    // gather the photos
-    var albumPhotos = [];
-    for (var i = 0; i < albums.length; i++) {
-      var album = albums[i];
-      if (!album.photos) { continue; }
-
-      var photos = album.photos.data;
-      for (var j = 0; j < photos.length; j++) {
-        albumPhotos.push(photos[j]);
-      }
-    }
-
-    setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
-      minWidth: 100,
-      widthVariance: 350,
-      minDelay: 400,
-      delayVariance: 1000
-    });
-  }
-
-  function handlePosts(posts) {
-    if (!posts) { return; }
-
-    setupDataStream(posts, fbRenderer.renderedPost, $postsLayer);
-  }
-
-  function handleLikes(likes) {
-    if (!likes) { return; }
-
-    setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
-  }
-
-
-  function handleEvents(events) {
-    if (!events) { return; }
-
-    setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
-  }
-
-  function handlePlaces(places) {
-    if (!places) { return; }
-
-    setupDataStream(places, fbRenderer.renderedPlace, $placesLayer);
-  }
-
-  function handleGroups(groups) {
-    if (!groups) { return; }
-
-    setupDataStream(groups, fbRenderer.renderedGroup, $groupsLayer);
-  }
-
-  function setupDataStream(data, renderer, $layer, options) {
-    if (!data || !renderer || !$layer) {
-      return;
-    }
-    if (!options) {
-      options = {};
-    }
-
-    var minWidth = options.minWidth || 200;
-    var widthVariance = options.widthVariance || 150;
-    var minSpeed = options.minSpeed || 4;
-    var maxSpeed = options.maxSpeed || 10;
-    var minDelay = options.minDelay || 3000;
-    var delayVariance = options.delayVariance || 5000;
-
-    var dataIndex = 0;
-    var activeRenderedElements = [];
-
-    function doNexItem() {
-      var delay = Math.random() * delayVariance + minDelay;
-      setTimeout(doNexItem, delay);
-
-      if (!shouldUpdate) {
-        return;
-      }
-
-      if (dataIndex >= data.length) {
-        dataIndex = 0;
-      }
-      var item = data[dataIndex++];
-
-      var $html = renderer(item);
-      var width = Math.random() * widthVariance + minWidth;
-      $html.css('width', width + 'px');
-      $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
-      $html.css('top', '0');
-      $html._speed = kt.randInt(minSpeed, maxSpeed);
-      $html._yOffset = -500;
-      updateYTranslation($html);
-
-      activeRenderedElements.push($html);
-      $layer.append($html);
-    }
-
-    doNexItem();
-
-    updateFunctions.push(function updateItems() {
-      for (var i = 0; i < activeRenderedElements.length; i++) {
-        var $html = activeRenderedElements[i];
-        updateYTranslation($html, $html._speed);
-
-        // trim if now offscreen
-        if ($html._yOffset > window.innerHeight + 20) {
-          $html.remove();
-          removeFromArray(activeRenderedElements, $html);
-        }
-      }
-    });
-  }
-
-  function setupDemographicStream(fbData) {
-    var demographicText = [];
-
-    if (fbData.age_range.min) {
-      demographicText.push(fbData.name + ' is at least ' + fbData.age_range.min + ' years old');
-    }
-
-    if (fbData.bio) {
-      demographicText.push(fbData.name + "'s bio: " + fbData.bio);
-    }
-
-    if (fbData.birthday) {
-      demographicText.push(fbData.name + ' was born on ' + fbData.birthday);
-    }
-
-    if (fbData.education) {
-      fbData.education.forEach(function(education) {
-        var text = fbData.name + ' attended ' + education.school.name;
-        if (education.year) { text += ' until ' + education.year.name; }
-        demographicText.push(text);
-      });
-    }
-
-    if (fbData.family && fbData.family.data) {
-      fbData.family.data.forEach(function(family) {
-        demographicText.push(family.name + ' is ' + fbData.name + "'s " + family.relationship);
-      });
-    }
-
-    if (fbData.hometown) {
-      demographicText.push(fbData.hometown + ' is ' + fbData.name + "'s hometown");
-    }
-
-    if (fbData.location) {
-      demographicText.push(fbData.name + ' lives in ' + fbData.location.name);
-    }
-
-    if (fbData.relationship_status) {
-      demographicText.push(fbData.name + ' is ' + fbData.relationship_status);
-    }
-
-    if (fbData.work) {
-      fbData.work.forEach(function(work) {
-        var text = fbData.name + ' worked at ' + work.employer.name;
-        if (work.location) { text += ' at ' + work.location.name; }
-        if (work.position) { text += ' with the title of ' + work.position.name; }
-        if (work.start_date || work.end_date) {
-          var start = work.start_date ? moment(work.start_date).format('MMMM YYYY') : null;
-          var end = work.end_date ? moment(work.end_date).format('MMMM YYYY') : null;
-          if (start && end) {
-            text += ' from ' + start + ' until ' + end;
-          }
-          else if (start) {
-            text += ', starting on ' + start;
-          }
-          else {
-            text += ' until ' + end;
-          }
-        }
-        demographicText.push(text);
-      });
-    }
-
-    demographicText = kt.shuffle(demographicText);
-
-    setupDataStream(demographicText, fbRenderer.renderedDemographicText, $demographicLayer);
   }
 
 });
 
-},{"./fb":2,"./fb-renderer":1,"./lib/buzz":3,"./loading-view":4,"./shims":6,"kutility":7,"moment":8,"tween.js":9}],6:[function(require,module,exports){
+},{"./fb":5,"./fb-gravity-streamer":2,"./fb-popularity-calculator":3,"./fb-renderer":4,"./lib/buzz":6,"./loading-view":8,"./shims":10,"tween.js":13}],10:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -1533,7 +2214,7 @@ $(function() {
         };
 }());
 
-},{}],7:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -2107,7 +2788,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],8:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -5303,7 +5984,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],9:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js
@@ -6179,4 +6860,4 @@ TWEEN.Interpolation = {
 
 })(this);
 
-},{}]},{},[5]);
+},{}]},{},[9]);

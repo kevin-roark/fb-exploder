@@ -73,7 +73,7 @@ module.exports.renderedLike = function _renderedLike(like) {
   var likes = div('fb-like-likes', like.likes && like.likes > 1 ? like.likes + ' people like this.' : '1 person likes this');
   html += div('fb-like-text-content', title + likes);
 
-  html += '<img class="fb-likes-liked-button" src="/media/liked.jpg" alt="liked" />';
+  html += '<img class="fb-likes-liked-button" src="media/liked.jpg" alt="liked" />';
 
   html += '</div>';
 
@@ -113,7 +113,7 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   var when = div('fb-event-when', formattedDate(event.start_time));
   var venue = div('fb-event-venue', event.place.name);
   var who = div('fb-event-who', event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied');
-  var goingImage = '<img class="fb-event-going-image" src="/media/going.jpg" alt="Going" />';
+  var goingImage = '<img class="fb-event-going-image" src="media/going.jpg" alt="Going" />';
   html += div('fb-event-data', name + when + venue + who + goingImage);
 
   // finisher
@@ -162,7 +162,7 @@ module.exports.renderedGroup = function _renderedGroup(group) {
   var privacy = div('fb-group-privacy', group.privacy.toLowerCase() + ' group');
   html += div('fb-group-cover-text', name + privacy);
 
-  var joined = '<img class="fb-group-joined-image" src="/media/joined.jpg"  alt="joined group" />';
+  var joined = '<img class="fb-group-joined-image" src="media/joined.jpg"  alt="joined group" />';
 
   if (group.cover) {
     html += '<img class="fb-group-cover" src="' + group.cover.source + '" alt="group pic">';
@@ -206,11 +206,11 @@ function renderedPostHeader(post) {
 }
 
 function renderedStats(post) {
-  var likeCount = post.likes ? post.likes.data.length : 0;
+  var likeCount = post.likes && post.likes.summary ? post.likes.summary.total_count : 0;
   var likeText = likeCount === 1 ? 'like' : 'likes';
   var shareCount = post.shares ? post.shares.count : 0;
   var shareText = shareCount === 1 ? 'share' : 'shares';
-  var commentCount = post.comments ? post.comments.data.length : 0;
+  var commentCount = post.comments && post.comments.summary ? post.comments.summary.total_count : 0;
   var commentText = commentCount === 1 ? 'comment' : 'comments';
 
   var html = '<div class="fb-post-data">';
