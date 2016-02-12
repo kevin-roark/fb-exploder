@@ -32,7 +32,7 @@ $(function() {
   update();
 
   fb.init(function() {
-    friendsSound.loop().play();
+    //friendsSound.loop().play();
     $facebookLoginButton.animate({opacity: 1}, 500);
   });
 
