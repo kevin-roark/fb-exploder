@@ -94,10 +94,10 @@ function enterSharingState(bestContent) {
 
     var context = compositeCanvas.getContext('2d');
 
-    $.getJSON('/media/celebrities.json', function(celebrities) {
+    $.getJSON('media/celebrities.json', function(celebrities) {
       celebrities.forEach(function(celeb, idx) {
         var $head = $('<div class="celebrity-head">');
-        $head.append($('<img src="/media/celebrity_heads/' + celeb.image + '">'));
+        $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
         $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
         $head.hover(function() {
           $celebrityHeadBio.text(celeb.bio);
@@ -115,7 +115,7 @@ function enterSharingState(bestContent) {
             h: width
           };
           context.shadowColor = color.randomColor();
-          drawImageFromUrl('/media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+          drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
         });
         $celebrityHeadZone.append($head);
 
