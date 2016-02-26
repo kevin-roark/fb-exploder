@@ -48,7 +48,7 @@ RunningStats.prototype.percentile = function(x) {
   var sd = this.standardDeviation();
 
   if (sd === 0) {
-    return x < mean ? 0 : 1;
+    return x < mean ? 0 : 100;
   }
 
   var percentile = normalcdf((x - mean) / sd);

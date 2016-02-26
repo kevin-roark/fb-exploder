@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
+var cors = require('cors');
 var RunningStats = require('./running-stats');
 
 var runningScorePath = path.join(__dirname, 'score.json');
@@ -11,6 +12,7 @@ var runningStats = new RunningStats(JSON.parse(fs.readFileSync(runningScorePath)
 
 var app = express();
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
