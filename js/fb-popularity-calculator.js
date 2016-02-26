@@ -2,11 +2,14 @@
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
 var color = require('./color');
+var celebrities = require('./celebrities');
 
 var PiecesToShow = 3;
 var LikeValue = 1;
 var CommentValue = 2;
 var ShareValue = 3;
+
+var apiHost = 'http://localhost:3000';
 
 var $container;
 $(function() {
@@ -17,13 +20,18 @@ $(function() {
 
 module.exports.start = function _start(dump, finishedCallback) {
   var hasEnteredSharingState = false;
+  var hasReceivedPercentile = false;
 
   var bestPhotos = dump.photos ? calculateBestElements(dump.photos.data, calculateStandardPoints) : [];
   var bestPosts = dump.posts ? calculateBestElements(dump.posts.data, calculateStandardPoints) : [];
   var bestLikes = dump.likes ? calculateBestElements(dump.likes.data, calculateLikePoints) : [];
   var bestEvents = dump.events ? calculateBestElements(dump.events.data, calculateEventPoints) : [];
   var bestContent = {photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents};
-  console.log(bestContent);
+  bestContent.totalPoints = calculateTotalPoints(bestContent);
+
+  populateBestContentWithPercentile(bestContent, function() {
+    hasReceivedPercentile = true;
+  });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
   $container.append($popularityZone);
@@ -94,35 +102,33 @@ function enterSharingState(bestContent) {
 
     var context = compositeCanvas.getContext('2d');
 
-    $.getJSON('media/celebrities.json', function(celebrities) {
-      celebrities.forEach(function(celeb, idx) {
-        var $head = $('<div class="celebrity-head">');
-        $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
-        $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
-        $head.hover(function() {
-          $celebrityHeadBio.text(celeb.bio);
-        });
-        $head.click(function() {
-          if (hasSharedToFacebook) {
-            return;
-          }
-
-          var width = Math.random() * 120 + 80;
-          var randomRect = {
-            x: Math.random() * (compositeCanvas.width - width),
-            y: Math.random() * (compositeCanvas.height - width),
-            w: width,
-            h: width
-          };
-          context.shadowColor = color.randomColor();
-          drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
-        });
-        $celebrityHeadZone.append($head);
-
-        if (idx === 0) {
-          $celebrityHeadBio.text(celeb.bio);
-        }
+    celebrities.forEach(function(celeb, idx) {
+      var $head = $('<div class="celebrity-head">');
+      $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
+      $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+      $head.hover(function() {
+        $celebrityHeadBio.text(celeb.bio);
       });
+      $head.click(function() {
+        if (hasSharedToFacebook) {
+          return;
+        }
+
+        var width = Math.random() * 120 + 80;
+        var randomRect = {
+          x: Math.random() * (compositeCanvas.width - width),
+          y: Math.random() * (compositeCanvas.height - width),
+          w: width,
+          h: width
+        };
+        context.shadowColor = color.randomColor();
+        drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+      });
+      $celebrityHeadZone.append($head);
+
+      if (idx === 0) {
+        $celebrityHeadBio.text(celeb.bio);
+      }
     });
 
     setTimeout(function() {
@@ -254,6 +260,38 @@ function calculateStats(item) {
   };
 }
 
+function calculateTotalPoints(bestContent) {
+  var totalPoints = 0;
+
+  bestContent.photos.forEach(function(photo) {
+    totalPoints += calculateStandardPoints(photo);
+  });
+
+  bestContent.posts.forEach(function(post) {
+    totalPoints += calculateStandardPoints(post);
+  });
+
+  bestContent.events.forEach(function(event) {
+    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
+  });
+
+  bestContent.likes.forEach(function(like) {
+    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
+  });
+
+  return totalPoints;
+}
+
+function populateBestContentWithPercentile(bestContent, callback) {
+  var endpoint = apiHost + '/score';
+  $.post(endpoint, {score: bestContent.totalPoints}, function(data) {
+    bestContent.percentile = data.percentile;
+    if (callback) {
+      callback();
+    }
+  });
+}
+
 /// Dom Rendering
 
 function renderedBestPhotos(photos) {
@@ -349,7 +387,6 @@ function generateCompositeCanvas(bestContent, callback) {
   context.shadowOffsetY = 12;
 
   var imagesToLoad = 0;
-  var totalPoints = 0;
   var hasFinished = false;
 
   function imageFinishedDrawing() {
@@ -376,8 +413,6 @@ function generateCompositeCanvas(bestContent, callback) {
   }
 
   bestContent.photos.forEach(function(photo) {
-    totalPoints += calculateStandardPoints(photo);
-
     imagesToLoad += 1;
 
     var width = (Math.random() * 0.25 + 0.2) * canvas.width;
@@ -388,8 +423,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.posts.forEach(function(post) {
-    totalPoints += calculateStandardPoints(post);
-
     if (post.picture) {
       imagesToLoad += 1;
       drawArbitraryImage(post.picture, imageFinishedDrawing);
@@ -397,8 +430,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
-
     if (event.cover && event.cover.source) {
       imagesToLoad += 1;
       drawArbitraryImage(event.cover.source, imageFinishedDrawing);
@@ -406,8 +437,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
-
     if (like.cover && like.cover.source) {
       imagesToLoad += 1;
       drawArbitraryImage(like.cover.source, imageFinishedDrawing);
@@ -460,6 +489,7 @@ function generateCompositeCanvas(bestContent, callback) {
     var brandSquareY = canvas.height/2 - brandSquareHeight/2;
     var textX = brandSquareX + 10;
     var textWidth = brandSquareWidth - 20;
+    var percentile = bestContent.percentile ? Math.round(bestContent.percentile * 10) / 10 : 50;
 
     context.shadowColor = 'rgba(0, 0, 0, 0.7)';
     context.shadowBlur = 40;
@@ -483,7 +513,7 @@ function generateCompositeCanvas(bestContent, callback) {
     context.fillStyle = 'rgb(233, 30, 30)';
     context.font = 'bold 64px "Times New Roman"';
     context.fillText('I SCORED', canvas.width/2, brandSquareY + 120, brandSquareWidth - 20);
-    context.fillText(totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.fillText(bestContent.totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
     context.restore();
 
     context.fillText('What do you score?', textX, brandSquareY + 240, textWidth);
