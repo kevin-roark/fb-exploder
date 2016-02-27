@@ -616,11 +616,12 @@ function enterSharingState(bestContent) {
       var headIsDisabled = (idx * 5) > percent;
 
       var $head = $('<div class="celebrity-head">');
-      if (headIsDisabled) {
-        $head.addClass('disabled');
-      }
       $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
       $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+      if (headIsDisabled) {
+        $head.addClass('disabled');
+        $head.append($('<div class="celebrity-head-disabler">'));
+      }
       $head.hover(function() {
         var text = headIsDisabled ? "You (scum) Haven't Earned The Right to interface with " + celeb.name : celeb.bio;
         $celebrityHeadBio.text(text);
