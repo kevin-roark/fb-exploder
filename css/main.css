@@ -129,7 +129,7 @@ a {
     display: none;
     position: fixed;
     top: 50%; margin-top: -300px;
-    left: 50%; width: 666px; margin-left: -333px;
+    left: 50%; width: 800px; margin-left: -400px;
   }
 
   .celebrity-head-bio {
@@ -156,7 +156,7 @@ a {
   }
   .celebrity-head-tip {
     display: none;
-    position: absolute; left: 10px; top: 30%; max-width: 240px;
+    position: absolute; left: 10px; bottom: 200px; max-width: 240px;
     font-size: 15px; line-height: 1.25; text-align: center;
     background-color: rgb(255, 255, 255);
     color: rgb(255, 0, 0);
@@ -165,7 +165,7 @@ a {
   }
   #facebook-share-button {
     display: none;
-    position: absolute; right: 20px; top: 35%; margin: 0;
+    position: absolute; right: 20px; bottom: 240px; margin: 0;
   }
     .celebrity-head {
       position: relative;
@@ -175,8 +175,14 @@ a {
       margin: 0px 25px;
       vertical-align: bottom;
     }
+      .celebrity-head.disabled {
+        cursor: auto;
+      }
       .celebrity-head:hover img {
         box-shadow: 0px 0px 40px rgba(238, 170, 170, 0.75);
+      }
+      .celebrity-head.disabled:hover img {
+        box-shadow: none;
       }
       .celebrity-head img {
         width: 100%;

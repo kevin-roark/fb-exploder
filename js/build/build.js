@@ -605,21 +605,28 @@ function enterSharingState(bestContent) {
 
   generateCompositeCanvas(bestContent, function(compositeCanvas) {
     var $canvas = $(compositeCanvas);
-    $canvas.css('max-width', '666px');
+    $canvas.css('width', '100%');
     $popularityShareZone.append($canvas);
     $popularityShareZone.fadeIn();
 
     var context = compositeCanvas.getContext('2d');
 
     celebrities.forEach(function(celeb, idx) {
+      var percent = bestContent.percentile ? Math.round(bestContent.percentile) : 50;
+      var headIsDisabled = (idx * 5) > percent;
+
       var $head = $('<div class="celebrity-head">');
+      if (headIsDisabled) {
+        $head.addClass('disabled');
+      }
       $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
       $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
       $head.hover(function() {
-        $celebrityHeadBio.text(celeb.bio);
+        var text = headIsDisabled ? "You (scum) Haven't Earned The Right to interface with " + celeb.name : celeb.bio;
+        $celebrityHeadBio.text(text);
       });
       $head.click(function() {
-        if (hasSharedToFacebook) {
+        if (hasSharedToFacebook || headIsDisabled) {
           return;
         }
 
@@ -645,7 +652,11 @@ function enterSharingState(bestContent) {
       $celebrityHeadBio.fadeIn();
 
       setTimeout(function() {
-        var $celebrityHeadTip = $('<div class="celebrity-head-tip">Your Life Score has earned you valuable celebrities! Click their heads to personalize your Life in Review Collage, then share to Facebook below!</div>');
+        var percent = bestContent.percentile ? Math.round(bestContent.percentile) : 50;
+        var celebrityTipText = 'Your Life Score of <i>' + bestContent.totalPoints +
+          '</i> places you in the <i>top ' + percent + '%</i> of all Facebook Users and has earned you some valuable celebrities!' +
+          ' Click their heads to personalize your Life in Review Collage, then share to Facebook below!';
+        var $celebrityHeadTip = $('<div class="celebrity-head-tip">' + celebrityTipText + '</div>');
         $('body').append($celebrityHeadTip);
 
         var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
@@ -674,7 +685,9 @@ function enterSharingState(bestContent) {
         $('body').append($shareButton);
 
         $celebrityHeadTip.fadeIn();
-        $shareButton.fadeIn();
+        setTimeout(function() {
+          $shareButton.fadeIn();
+        }, 500);
       }, 500);
     }, 800);
   });
@@ -1023,6 +1036,17 @@ function generateCompositeCanvas(bestContent, callback) {
     context.font = 'bold 64px "Times New Roman"';
     context.fillText('I SCORED', canvas.width/2, brandSquareY + 120, brandSquareWidth - 20);
     context.fillText(bestContent.totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.restore();
+
+    context.save();
+    context.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    context.shadowBlur = 8;
+    context.shadowOffsetX = 3;
+    context.shadowOffsetY = 3;
+    context.fillStyle = 'rgb(255, 255, 5)';
+    context.font = 'bold 140px "Times New Roman"';
+    var percentText = percentile + '%';
+    context.fillText(percentText, canvas.width - context.measureText(percentText).width, 120);
     context.restore();
 
     context.fillText('What do you score?', textX, brandSquareY + 240, textWidth);
