@@ -243,7 +243,6 @@ function shareCanvasToFacebook(canvas, callback) {
       caption: 'Check out my Life in Review Score! Please tell me yours?',
       description: 'Life in Review scores you!'
     }, function(response) {
-      console.log(response);
       var success = response && !response.error_code;
       if (callback) {
         callback(success);
@@ -326,11 +325,11 @@ function calculateTotalPoints(bestContent) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.00005);
+    totalPoints += Math.round(calculateEventPoints(event) * 0.000005);
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.00005);
+    totalPoints += Math.round(calculateLikePoints(like) * 0.000005);
   });
 
   return totalPoints;

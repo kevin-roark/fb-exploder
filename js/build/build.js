@@ -655,7 +655,6 @@ function shareCanvasToFacebook(canvas, callback) {
       caption: 'Check out my Life in Review Score! Please tell me yours?',
       description: 'Life in Review scores you!'
     }, function(response) {
-      console.log(response);
       var success = response && !response.error_code;
       if (callback) {
         callback(success);
@@ -738,11 +737,11 @@ function calculateTotalPoints(bestContent) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.00005);
+    totalPoints += Math.round(calculateEventPoints(event) * 0.000005);
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.00005);
+    totalPoints += Math.round(calculateLikePoints(like) * 0.000005);
   });
 
   return totalPoints;
@@ -1166,10 +1165,16 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   // data
   var name = div('fb-event-name', event.name);
   var when = div('fb-event-when', formattedDate(event.start_time));
-  var venue = div('fb-event-venue', event.place.name);
   var who = div('fb-event-who', event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied');
   var goingImage = '<img class="fb-event-going-image" src="media/going.jpg" alt="Going" />';
-  html += div('fb-event-data', name + when + venue + who + goingImage);
+
+  if (event.place && event.place.name) {
+    var venue = div('fb-event-venue', event.place.name);
+    html += div('fb-event-data', name + when + venue + who + goingImage);
+  }
+  else {
+    html += div('fb-event-data', name + when + who + goingImage);
+  }
 
   // finisher
   html += '</div>';
@@ -1300,7 +1305,7 @@ function span(className, content) {
 
 },{"kutility":12,"moment":13}],6:[function(require,module,exports){
 
-var TEST_MODE = true;
+var TEST_MODE = false;
 
 module.exports.init = function(callback) {
   window.fbAsyncInit = function() {
@@ -1354,16 +1359,44 @@ module.exports.meDump = function(callback) {
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
   var demographicFields = 'age_range,email,name,cover,picture';
-  var combinedFields = [
-    photosField,
-    albumsField,
-    postsField,
-    friendsField,
-    eventsField,
-    likesField,
-    demographicFields
-  ].join(',');
-  api('/me?fields=' + combinedFields, callback);
+
+  var numberOfCalls = TEST_MODE ? 1 : 3;
+  if (TEST_MODE) {
+    var combinedFields = [
+      photosField,
+      albumsField,
+      postsField,
+      friendsField,
+      eventsField,
+      likesField,
+      demographicFields
+    ].join(',');
+    api('/me?fields=' + combinedFields, fbCallDidFinish);
+  }
+  else {
+    api('/me?fields=' + [postsField, friendsField].join(','), fbCallDidFinish);
+    api('/me?fields=' + [eventsField, likesField, demographicFields].join(','), fbCallDidFinish);
+    api('/me?fields=' + [photosField, albumsField].join(','), fbCallDidFinish);
+  }
+
+  var callsFinished = 0;
+  var combinedResponses = {};
+  function fbCallDidFinish(response) {
+    for (var key in response) {
+      if (response.hasOwnProperty(key)) {
+        combinedResponses[key] = response[key];
+      }
+    }
+
+    callsFinished += 1;
+    if (callsFinished !== numberOfCalls) {
+      return;
+    }
+
+    console.log('final output: ');
+    console.log(combinedResponses);
+    callback(combinedResponses);
+  }
 };
 
 },{}],7:[function(require,module,exports){
