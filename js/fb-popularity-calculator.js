@@ -79,10 +79,10 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   setTimeout(function() {
     if (!hasEnteredSharingState) {
-      $('.popularity-zone').fadeOut(10 * 1000);
-      finishedCallback();
+      $('.popularity-zone').fadeOut(3000);
+      setTimeout(finishedCallback, 3000);
     }
-  }, 27 * 1000);
+  }, 20 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -193,7 +193,7 @@ function enterSharingState(bestContent, finishedCallback) {
   var idleInterval = setInterval(function() {
     var now = new Date();
     var timeSinceLastCelebrityHeadClick = now - lastCelebrityHeadClickTime;
-    if (timeSinceLastCelebrityHeadClick > 29 * 1000) {
+    if (timeSinceLastCelebrityHeadClick > 24 * 1000) {
       goHome();
       clearInterval(idleInterval);
     }
@@ -212,7 +212,7 @@ function enterSharingState(bestContent, finishedCallback) {
     $('.celebrity-head-tip').fadeOut(1000);
     $('#facebook-share-button').fadeOut(1000);
     $('#skip-share-button').fadeOut(1000);
-    $('.popularity-zone').fadeOut(6666);
+    $('.popularity-zone').fadeOut(3000);
 
     var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
     $('body').append($thanks);

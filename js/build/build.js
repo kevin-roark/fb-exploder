@@ -139,7 +139,7 @@ var DelayBeforePhotoWaterfall = 6666;
 var DelayBeforePostsWaterfall = 15666;
 var DelayBeforeDataWaterfall = 23666;
 
-var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, orderedLayers;
+var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers;
 $(function() {
   $container = $('#content-container');
 
@@ -150,7 +150,8 @@ $(function() {
   $postsLayer = makeLayer('posts-layer');
   $likesLayer = makeLayer('likes-layer');
   $eventsLayer = makeLayer('events-layer');
-  orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer];
+  $staticLayer = makeLayer('static-layer');
+  orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer];
 });
 
 var updateFunctions = [];
@@ -312,24 +313,42 @@ function handleAlbums(albums) {
     minDelay: 400,
     delayVariance: 1000
   });
+  setTimeout(function() {
+    setupStaticDataStack(albumPhotos, fbRenderer.renderedAlbumPhoto, {
+      minWidth: 100,
+      widthVariance: 350
+    });
+  }, 45 * 1000);
 }
 
 function handlePosts(posts) {
   if (!posts) { return; }
 
   setupDataStream(posts, fbRenderer.renderedPost, $postsLayer);
+  setTimeout(function() {
+    setupStaticDataStack(posts, fbRenderer.renderedPost);
+  }, 45 * 1000);
 }
 
 function handleLikes(likes) {
   if (!likes) { return; }
 
   setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
+  setTimeout(function() {
+    setupStaticDataStack(likes, fbRenderer.renderedLike);
+  }, 45 * 1000);
 }
 
 function handleEvents(events) {
   if (!events) { return; }
 
   setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
+  setTimeout(function() {
+    setupStaticDataStack(events, fbRenderer.renderedEvent, {
+      minWidth: 300,
+      widthVariance: 200
+    });
+  }, 45 * 1000);
 }
 
 function setupDataStream(data, renderer, $layer, options) {
@@ -342,10 +361,10 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
-  var minSpeed = options.minSpeed || 4;
+  var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
-  var minDelay = options.minDelay || 3000;
-  var delayVariance = options.delayVariance || 5000;
+  var minDelay = options.minDelay || 1000;
+  var delayVariance = options.delayVariance || 1200;
 
   var dataIndex = 0;
   var activeRenderedElements = [];
@@ -390,6 +409,45 @@ function setupDataStream(data, renderer, $layer, options) {
       }
     }
   });
+}
+
+function setupStaticDataStack(data, renderer, options) {
+  if (!data || !renderer) {
+    return;
+  }
+  if (!options) {
+    options = {};
+  }
+
+  var minWidth = options.minWidth || 200;
+  var widthVariance = options.widthVariance || 150;
+  var elementLifespan = options.elementLifespan || 4000;
+  var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
+  var delayDecayRate = options.delayDecayRate || 0.998; // exponential
+
+  var currentDelayBetweenElements = initialDelayBetweenElements;
+
+  stackData();
+
+  function stackData() {
+    var item = kt.choice(data);
+    var $html = renderer(item);
+    var width = Math.random() * widthVariance + minWidth;
+    $html.css('display', 'none');
+    $html.css('width', width + 'px');
+    $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
+    $html.css('top', (Math.random() * (window.innerHeight - width * 1.25)) + 'px');
+
+    $staticLayer.append($html);
+    $html.fadeIn();
+
+    setTimeout(function() {
+      $html.fadeOut();
+    }, elementLifespan + 400); // fade in delay
+
+    setTimeout(stackData, currentDelayBetweenElements);
+    currentDelayBetweenElements = Math.pow(currentDelayBetweenElements, delayDecayRate);
+  }
 }
 
 /// Util
@@ -491,10 +549,10 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   setTimeout(function() {
     if (!hasEnteredSharingState) {
-      $('.popularity-zone').fadeOut(10 * 1000);
-      finishedCallback();
+      $('.popularity-zone').fadeOut(3000);
+      setTimeout(finishedCallback, 3000);
     }
-  }, 27 * 1000);
+  }, 20 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -605,7 +663,7 @@ function enterSharingState(bestContent, finishedCallback) {
   var idleInterval = setInterval(function() {
     var now = new Date();
     var timeSinceLastCelebrityHeadClick = now - lastCelebrityHeadClickTime;
-    if (timeSinceLastCelebrityHeadClick > 29 * 1000) {
+    if (timeSinceLastCelebrityHeadClick > 24 * 1000) {
       goHome();
       clearInterval(idleInterval);
     }
@@ -624,7 +682,7 @@ function enterSharingState(bestContent, finishedCallback) {
     $('.celebrity-head-tip').fadeOut(1000);
     $('#facebook-share-button').fadeOut(1000);
     $('#skip-share-button').fadeOut(1000);
-    $('.popularity-zone').fadeOut(6666);
+    $('.popularity-zone').fadeOut(3000);
 
     var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
     $('body').append($thanks);
@@ -1282,8 +1340,13 @@ function renderedStats(post) {
 
   for (var i = 0; i < commentCount; i++) {
     var comment = post.comments.data[i];
+    if (!comment) {
+      continue;
+    }
+    var fromName = comment && comment.from ? comment.from.name : '';
+
     html += '<div class="fb-post-comment">';
-    html += '<span class="fb-post-comment-name">' + comment.from.name + '</span>';
+    html += '<span class="fb-post-comment-name">' + fromName + '</span>';
     html += ' <span class="fb-post-comment-message">' + comment.message + '</span>';
     html += ' <span class="fb-post-comment-date">' + formattedDate(comment.created_time) + '</span>';
     html += '</div>';
