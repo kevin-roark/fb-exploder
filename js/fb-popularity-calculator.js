@@ -82,7 +82,7 @@ module.exports.start = function _start(dump, finishedCallback) {
       $('.popularity-zone').fadeOut(10 * 1000);
       finishedCallback();
     }
-  }, 27 * 1000);
+  }, 20 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -193,7 +193,7 @@ function enterSharingState(bestContent, finishedCallback) {
   var idleInterval = setInterval(function() {
     var now = new Date();
     var timeSinceLastCelebrityHeadClick = now - lastCelebrityHeadClickTime;
-    if (timeSinceLastCelebrityHeadClick > 29 * 1000) {
+    if (timeSinceLastCelebrityHeadClick > 24 * 1000) {
       goHome();
       clearInterval(idleInterval);
     }
