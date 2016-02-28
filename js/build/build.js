@@ -133,15 +133,13 @@ module.exports.randomBrightColor = function() {
 },{}],3:[function(require,module,exports){
 
 var kt = require('kutility');
-var moment = require('moment');
 var fbRenderer = require('./fb-renderer');
 
 var DelayBeforePhotoWaterfall = 6666;
 var DelayBeforePostsWaterfall = 15666;
 var DelayBeforeDataWaterfall = 23666;
-var DelayBeforeDemographicWaterfall = 33666;
 
-var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer, $demographicLayer, orderedLayers;
+var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, orderedLayers;
 $(function() {
   $container = $('#content-container');
 
@@ -152,10 +150,7 @@ $(function() {
   $postsLayer = makeLayer('posts-layer');
   $likesLayer = makeLayer('likes-layer');
   $eventsLayer = makeLayer('events-layer');
-  $placesLayer = makeLayer('places-layer');
-  $groupsLayer = makeLayer('groups-layer');
-  $demographicLayer = makeLayer('demographic-layer');
-  orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $demographicLayer];
+  orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer];
 });
 
 var updateFunctions = [];
@@ -187,18 +182,7 @@ module.exports.start = function _start(dump) {
     if (dump.events) {
       handleEvents(dump.events.data);
     }
-    if (dump.tagged_places) {
-      handlePlaces(dump.tagged_places.data);
-    }
-    // TODO: request groups access
-    // if (response.groups) {
-    //   handleGroups(response.groups.data);
-    // }
   }, DelayBeforeDataWaterfall);
-
-  setTimeout(function() {
-    setupDemographicStream(dump);
-  }, DelayBeforeDemographicWaterfall);
 };
 
 module.exports.update = function _update() {
@@ -342,91 +326,10 @@ function handleLikes(likes) {
   setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
 }
 
-
 function handleEvents(events) {
   if (!events) { return; }
 
   setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
-}
-
-function handlePlaces(places) {
-  if (!places) { return; }
-
-  setupDataStream(places, fbRenderer.renderedPlace, $placesLayer);
-}
-
-function handleGroups(groups) {
-  if (!groups) { return; }
-
-  setupDataStream(groups, fbRenderer.renderedGroup, $groupsLayer);
-}
-
-function setupDemographicStream(fbData) {
-  var demographicText = [];
-
-  if (fbData.age_range.min) {
-    demographicText.push(fbData.name + ' is at least ' + fbData.age_range.min + ' years old');
-  }
-
-  if (fbData.bio) {
-    demographicText.push(fbData.name + "'s bio: " + fbData.bio);
-  }
-
-  if (fbData.birthday) {
-    demographicText.push(fbData.name + ' was born on ' + fbData.birthday);
-  }
-
-  if (fbData.education) {
-    fbData.education.forEach(function(education) {
-      var text = fbData.name + ' attended ' + education.school.name;
-      if (education.year) { text += ' until ' + education.year.name; }
-      demographicText.push(text);
-    });
-  }
-
-  if (fbData.family && fbData.family.data) {
-    fbData.family.data.forEach(function(family) {
-      demographicText.push(family.name + ' is ' + fbData.name + "'s " + family.relationship);
-    });
-  }
-
-  if (fbData.hometown) {
-    demographicText.push(fbData.hometown.name + ' is ' + fbData.name + "'s hometown");
-  }
-
-  if (fbData.location) {
-    demographicText.push(fbData.name + ' lives in ' + fbData.location.name);
-  }
-
-  if (fbData.relationship_status) {
-    demographicText.push(fbData.name + ' is ' + fbData.relationship_status);
-  }
-
-  if (fbData.work) {
-    fbData.work.forEach(function(work) {
-      var text = fbData.name + ' worked at ' + work.employer.name;
-      if (work.location) { text += ' at ' + work.location.name; }
-      if (work.position) { text += ' with the title of ' + work.position.name; }
-      if (work.start_date || work.end_date) {
-        var start = work.start_date ? moment(work.start_date).format('MMMM YYYY') : null;
-        var end = work.end_date ? moment(work.end_date).format('MMMM YYYY') : null;
-        if (start && end) {
-          text += ' from ' + start + ' until ' + end;
-        }
-        else if (start) {
-          text += ', starting on ' + start;
-        }
-        else {
-          text += ' until ' + end;
-        }
-      }
-      demographicText.push(text);
-    });
-  }
-
-  demographicText = kt.shuffle(demographicText);
-
-  setupDataStream(demographicText, fbRenderer.renderedDemographicText, $demographicLayer);
 }
 
 function setupDataStream(data, renderer, $layer, options) {
@@ -506,7 +409,7 @@ function removeFromArray(arr, el) {
   }
 }
 
-},{"./fb-renderer":5,"kutility":12,"moment":13}],4:[function(require,module,exports){
+},{"./fb-renderer":5,"kutility":12}],4:[function(require,module,exports){
 
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
@@ -1429,16 +1332,7 @@ module.exports.login = function(callback) {
     'user_friends',
     'user_likes',
     'user_posts',
-    'user_about_me',
-    'user_birthday',
-    'user_relationships',
-    'user_tagged_places',
-    'user_work_history',
-    'user_education_history',
-    'user_location',
-    'user_religion_politics',
-    'user_events',
-    'user_hometown'
+    'user_events'
   ].join(',');
   window.FB.login(callback, {scope: scope});
 };
@@ -1456,21 +1350,17 @@ module.exports.meDump = function(callback) {
   var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
   var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
-  var placesField = limit('tagged_places') + '{created_time,place{name}}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
-  var groupsField = limit('groups') + '{cover,description,name,privacy}';
-  var demographicFields = 'family{name,relationship},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover,picture';
+  var demographicFields = 'age_range,email,name,cover,picture';
   var combinedFields = [
     photosField,
     albumsField,
     postsField,
-    placesField,
     friendsField,
     eventsField,
     likesField,
-    groupsField,
     demographicFields
   ].join(',');
   api('/me?fields=' + combinedFields, callback);
