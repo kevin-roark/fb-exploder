@@ -111,10 +111,16 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   // data
   var name = div('fb-event-name', event.name);
   var when = div('fb-event-when', formattedDate(event.start_time));
-  var venue = div('fb-event-venue', event.place.name);
   var who = div('fb-event-who', event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied');
   var goingImage = '<img class="fb-event-going-image" src="media/going.jpg" alt="Going" />';
-  html += div('fb-event-data', name + when + venue + who + goingImage);
+
+  if (event.place && event.place.name) {
+    var venue = div('fb-event-venue', event.place.name);
+    html += div('fb-event-data', name + when + venue + who + goingImage);
+  }
+  else {
+    html += div('fb-event-data', name + when + who + goingImage);
+  }
 
   // finisher
   html += '</div>';

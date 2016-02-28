@@ -1,4 +1,108 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+module.exports=[
+  {
+    "name": "Gary Busey",
+    "bio": "Busey began his show business career as a drummer in The Rubber Band",
+    "image": "busey.png"
+  },
+  {
+    "name": "Andy Rooney",
+    "bio": "He was the first journalist to reach the Ludendorff Bridge after the 9th Armored Division captured it on March 7, 1945.",
+    "image": "rooney.png"
+  },
+  {
+    "name": "Carlos Mencia",
+    "bio": "Ned Arnel Mencia (born October 22, 1967), known professionally as Carlos Mencia (and previously Ned Holness)",
+    "image": "carlos_mencia.png"
+  },
+  {
+    "name": "Slavoj Zizek",
+    "bio": "Zizek has been married three times: firstly, to Renata Salecl, another notable Slovene philosopher; secondly, to fashion model Analia Hounie, daughter of an Argentine Lacanian psychoanalyst; and thirdly, to the Slovene journalist Jela Krecic, daughter of the renowned historian of architecture Peter Krecic",
+    "image": "zizek.png"
+  },
+  {
+    "name": "Cat Stevens",
+    "bio": "He was called \"the artist boy\" and mentions that \"I was beat up, but I was noticed\".",
+    "image": "stevens.png"
+  },
+  {
+    "name": "Rachel Ray",
+    "bio": "She believes that measuring \"takes away from the creative, hands-on process of cooking\" and instead favors approximations such as \"half a palmful.\"",
+    "image": "rachel.png"
+  },
+  {
+    "name": "Dakota Fanning",
+    "bio": "In February 2014, she recorded a voice role for the animated movie Yellowbird.",
+    "image": "dakota.png"
+  },
+  {
+    "name": "Charlize Theron",
+    "bio": "From 1997 to 2001, she dated Third Eye Blind frontman Stephan Jenkins.",
+    "image" : "charlize.png"
+  },
+  {
+    "name": "Ashton Kutcher",
+    "bio": "To earn money for his tuition, Kutcher worked as a college summer hire in the cereal department for the General Mills plant in Cedar Rapids, and sometimes sold his blood.",
+    "image" : "ashton.png"
+  },
+  {
+    "name": "Doug Pitt",
+    "bio": "In January 2011, Pitt became the first American on record to climb Mount Kilimanjaro and descend on a mountain bike.",
+    "image" : "pitt.png"
+  },
+  {
+    "name": "Claire Danes",
+    "bio": "At age 13, Danes' first big job was working on the Dudley Moore TV sitcom pilot called Dudley, which was shot at Silvercup Studios in Astoria, Queens.",
+    "image" : "claire.png"
+  },
+  {
+    "name": "Whoopi Goldberg",
+    "bio": "Most recently, she had a cameo role as Megan Fox's boss in the 2014 reboot of Teenage Mutant Ninja Turtles, and played herself in Chris Rock's Top Five.",
+    "image" : "whoopi.png"
+  },
+  {
+    "name": "Idris Elba",
+    "bio": "In 1986, he began helping an uncle with his wedding DJ business; within a year, he had started his own DJ company with some of his friends.",
+    "image" : "idris.png"
+  },
+  {
+    "name": "Usain Bolt",
+    "bio": "Bolt's achievements in sprinting have earned him the media nickname \"Lightning Bolt\".",
+    "image" : "bolt.png"
+  },
+  {
+    "name": "Mother Theresa",
+    "bio": "Her father may have been from Prizren, Kosovo, while her mother may have been from a village near Gjakova.",
+    "image" : "mteresa.png"
+  },
+  {
+    "name": "Katy Perry",
+    "bio": "Growing up, Perry and her siblings were not allowed to eat Lucky Charms as the term \"luck\" reminded their mother of Lucifer, and had to call deviled eggs \"angeled eggs\".",
+    "image" : "katy.png"
+  },
+  {
+    "name": "Leonardo Di Caprio",
+    "bio": "In 2010, his environmental work earned DiCaprio a nomination for the VH1 Do Something Award.",
+    "image" : "leo.png"
+  },
+  {
+    "name": "Leonardo da Vinci",
+    "bio": "His sexuality has been the subject of satire, analysis, and speculation.",
+    "image" : "vinci.png"
+  },
+  {
+    "name": "Clay Aiken",
+    "bio": "While the origin of the term \"Claymates\" is unknown, Aiken trademarked the term.",
+    "image" : "aiken.png"
+  },
+  {
+    "name": "Lil Bow Wow",
+    "bio": "Since the success of Like Mike, Bow Wow has starred in several Hollywood films, including Roll Bounce, The Fast and the Furious: Tokyo Drift and Hurricane Season.",
+    "image" : "bowwow.png"
+  }
+]
+
+},{}],2:[function(require,module,exports){
 /* thanks henry */
 
 function v() {
@@ -26,18 +130,16 @@ module.exports.randomBrightColor = function() {
     return "rgb(" + v() + ",0,255)";
 };
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 
 var kt = require('kutility');
-var moment = require('moment');
 var fbRenderer = require('./fb-renderer');
 
 var DelayBeforePhotoWaterfall = 6666;
 var DelayBeforePostsWaterfall = 15666;
 var DelayBeforeDataWaterfall = 23666;
-var DelayBeforeDemographicWaterfall = 33666;
 
-var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $groupsLayer, $demographicLayer, orderedLayers;
+var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, orderedLayers;
 $(function() {
   $container = $('#content-container');
 
@@ -48,10 +150,7 @@ $(function() {
   $postsLayer = makeLayer('posts-layer');
   $likesLayer = makeLayer('likes-layer');
   $eventsLayer = makeLayer('events-layer');
-  $placesLayer = makeLayer('places-layer');
-  $groupsLayer = makeLayer('groups-layer');
-  $demographicLayer = makeLayer('demographic-layer');
-  orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $placesLayer, $demographicLayer];
+  orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer];
 });
 
 var updateFunctions = [];
@@ -83,18 +182,7 @@ module.exports.start = function _start(dump) {
     if (dump.events) {
       handleEvents(dump.events.data);
     }
-    if (dump.tagged_places) {
-      handlePlaces(dump.tagged_places.data);
-    }
-    // TODO: request groups access
-    // if (response.groups) {
-    //   handleGroups(response.groups.data);
-    // }
   }, DelayBeforeDataWaterfall);
-
-  setTimeout(function() {
-    setupDemographicStream(dump);
-  }, DelayBeforeDemographicWaterfall);
 };
 
 module.exports.update = function _update() {
@@ -238,91 +326,10 @@ function handleLikes(likes) {
   setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
 }
 
-
 function handleEvents(events) {
   if (!events) { return; }
 
   setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
-}
-
-function handlePlaces(places) {
-  if (!places) { return; }
-
-  setupDataStream(places, fbRenderer.renderedPlace, $placesLayer);
-}
-
-function handleGroups(groups) {
-  if (!groups) { return; }
-
-  setupDataStream(groups, fbRenderer.renderedGroup, $groupsLayer);
-}
-
-function setupDemographicStream(fbData) {
-  var demographicText = [];
-
-  if (fbData.age_range.min) {
-    demographicText.push(fbData.name + ' is at least ' + fbData.age_range.min + ' years old');
-  }
-
-  if (fbData.bio) {
-    demographicText.push(fbData.name + "'s bio: " + fbData.bio);
-  }
-
-  if (fbData.birthday) {
-    demographicText.push(fbData.name + ' was born on ' + fbData.birthday);
-  }
-
-  if (fbData.education) {
-    fbData.education.forEach(function(education) {
-      var text = fbData.name + ' attended ' + education.school.name;
-      if (education.year) { text += ' until ' + education.year.name; }
-      demographicText.push(text);
-    });
-  }
-
-  if (fbData.family && fbData.family.data) {
-    fbData.family.data.forEach(function(family) {
-      demographicText.push(family.name + ' is ' + fbData.name + "'s " + family.relationship);
-    });
-  }
-
-  if (fbData.hometown) {
-    demographicText.push(fbData.hometown.name + ' is ' + fbData.name + "'s hometown");
-  }
-
-  if (fbData.location) {
-    demographicText.push(fbData.name + ' lives in ' + fbData.location.name);
-  }
-
-  if (fbData.relationship_status) {
-    demographicText.push(fbData.name + ' is ' + fbData.relationship_status);
-  }
-
-  if (fbData.work) {
-    fbData.work.forEach(function(work) {
-      var text = fbData.name + ' worked at ' + work.employer.name;
-      if (work.location) { text += ' at ' + work.location.name; }
-      if (work.position) { text += ' with the title of ' + work.position.name; }
-      if (work.start_date || work.end_date) {
-        var start = work.start_date ? moment(work.start_date).format('MMMM YYYY') : null;
-        var end = work.end_date ? moment(work.end_date).format('MMMM YYYY') : null;
-        if (start && end) {
-          text += ' from ' + start + ' until ' + end;
-        }
-        else if (start) {
-          text += ', starting on ' + start;
-        }
-        else {
-          text += ' until ' + end;
-        }
-      }
-      demographicText.push(text);
-    });
-  }
-
-  demographicText = kt.shuffle(demographicText);
-
-  setupDataStream(demographicText, fbRenderer.renderedDemographicText, $demographicLayer);
 }
 
 function setupDataStream(data, renderer, $layer, options) {
@@ -402,16 +409,19 @@ function removeFromArray(arr, el) {
   }
 }
 
-},{"./fb-renderer":4,"kutility":11,"moment":12}],3:[function(require,module,exports){
+},{"./fb-renderer":5,"kutility":12}],4:[function(require,module,exports){
 
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
 var color = require('./color');
+var celebrities = require('./celebrities');
 
 var PiecesToShow = 3;
 var LikeValue = 1;
 var CommentValue = 2;
 var ShareValue = 3;
+
+var apiHost = 'http://localhost:3000';
 
 var $container;
 $(function() {
@@ -422,13 +432,18 @@ $(function() {
 
 module.exports.start = function _start(dump, finishedCallback) {
   var hasEnteredSharingState = false;
+  var hasReceivedPercentile = false;
 
   var bestPhotos = dump.photos ? calculateBestElements(dump.photos.data, calculateStandardPoints) : [];
   var bestPosts = dump.posts ? calculateBestElements(dump.posts.data, calculateStandardPoints) : [];
   var bestLikes = dump.likes ? calculateBestElements(dump.likes.data, calculateLikePoints) : [];
   var bestEvents = dump.events ? calculateBestElements(dump.events.data, calculateEventPoints) : [];
   var bestContent = {photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents};
-  console.log(bestContent);
+  bestContent.totalPoints = calculateTotalPoints(bestContent);
+
+  populateBestContentWithPercentile(bestContent, function() {
+    hasReceivedPercentile = true;
+  });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
   $container.append($popularityZone);
@@ -453,7 +468,9 @@ module.exports.start = function _start(dump, finishedCallback) {
       return;
     }
 
-    enterSharingState(bestContent);
+    hasEnteredSharingState = true;
+
+    enterSharingState(bestContent, finishedCallback);
   });
   $shareButtonWrapper.append($collageButton);
   $popularityZone.append($shareButtonWrapper);
@@ -472,11 +489,17 @@ module.exports.start = function _start(dump, finishedCallback) {
     $collageButton.animate({opacity: 1}, 800);
   }, 1600);
 
-  //setTimeout(finishedCallback, 30000);
+  setTimeout(function() {
+    if (!hasEnteredSharingState) {
+      $('.popularity-zone').fadeOut(10 * 1000);
+      finishedCallback();
+    }
+  }, 27 * 1000);
 };
 
-function enterSharingState(bestContent) {
+function enterSharingState(bestContent, finishedCallback) {
   var hasSharedToFacebook = false;
+  var lastCelebrityHeadClickTime = new Date();
 
   var $popularityShareWrapper = $('<div class="popularity-share-wrapper">');
   $container.append($popularityShareWrapper);
@@ -493,41 +516,50 @@ function enterSharingState(bestContent) {
 
   generateCompositeCanvas(bestContent, function(compositeCanvas) {
     var $canvas = $(compositeCanvas);
-    $canvas.css('max-width', '666px');
+    $canvas.css('width', '100%');
     $popularityShareZone.append($canvas);
     $popularityShareZone.fadeIn();
 
     var context = compositeCanvas.getContext('2d');
 
-    $.getJSON('media/celebrities.json', function(celebrities) {
-      celebrities.forEach(function(celeb, idx) {
-        var $head = $('<div class="celebrity-head">');
-        $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
-        $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
-        $head.hover(function() {
-          $celebrityHeadBio.text(celeb.bio);
-        });
-        $head.click(function() {
-          if (hasSharedToFacebook) {
-            return;
-          }
+    celebrities.forEach(function(celeb, idx) {
+      var percent = bestContent.percentile ? Math.round(bestContent.percentile) : 50;
+      var headIsDisabled = (idx * 5) > percent;
 
-          var width = Math.random() * 120 + 80;
-          var randomRect = {
-            x: Math.random() * (compositeCanvas.width - width),
-            y: Math.random() * (compositeCanvas.height - width),
-            w: width,
-            h: width
-          };
-          context.shadowColor = color.randomColor();
-          drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
-        });
-        $celebrityHeadZone.append($head);
-
-        if (idx === 0) {
-          $celebrityHeadBio.text(celeb.bio);
-        }
+      var $head = $('<div class="celebrity-head">');
+      $head.append($('<img class="offset-celebrity-head" src="media/celebrity_heads/' + celeb.image + '">'));
+      $head.append($('<img class="celebrity-head-image" src="media/celebrity_heads/' + celeb.image + '">'));
+      $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+      if (headIsDisabled) {
+        $head.addClass('disabled');
+        $head.append($('<div class="celebrity-head-disabler">'));
+      }
+      $head.hover(function() {
+        var text = headIsDisabled ? "You (scum) Haven't Earned The Right to interface with " + celeb.name : celeb.bio;
+        $celebrityHeadBio.text(text);
       });
+      $head.click(function() {
+        if (hasSharedToFacebook || headIsDisabled) {
+          return;
+        }
+
+        var width = Math.random() * 120 + 80;
+        var randomRect = {
+          x: Math.random() * (compositeCanvas.width - width),
+          y: Math.random() * (compositeCanvas.height - width),
+          w: width,
+          h: width
+        };
+        context.shadowColor = color.randomColor();
+        drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+
+        lastCelebrityHeadClickTime = new Date();
+      });
+      $celebrityHeadZone.append($head);
+
+      if (idx === 0) {
+        $celebrityHeadBio.text(celeb.bio);
+      }
     });
 
     setTimeout(function() {
@@ -535,7 +567,11 @@ function enterSharingState(bestContent) {
       $celebrityHeadBio.fadeIn();
 
       setTimeout(function() {
-        var $celebrityHeadTip = $('<div class="celebrity-head-tip">Your Life Score has earned you valuable celebrities! Click their heads to personalize your Life in Review Collage, then share to Facebook below!</div>');
+        var percent = bestContent.percentile ? Math.round(bestContent.percentile) : 50;
+        var celebrityTipText = 'Your Life Score of <i>' + bestContent.totalPoints +
+          '</i> places you in the <i>top ' + percent + '%</i> of all Facebook Users and has earned you some valuable celebrities!' +
+          ' Click their heads to personalize your Life in Review Collage, then share to Facebook below!';
+        var $celebrityHeadTip = $('<div class="celebrity-head-tip">' + celebrityTipText + '</div>');
         $('body').append($celebrityHeadTip);
 
         var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
@@ -545,29 +581,60 @@ function enterSharingState(bestContent) {
             $('.celebrity-head').css('pointer', 'auto');
 
             shareCanvasToFacebook(compositeCanvas, function() {
-              $popularityShareWrapper.hide();
-              $celebrityHeadZone.hide();
-              $celebrityHeadBio.hide();
-              $celebrityHeadTip.hide();
-              $shareButton.hide();
-              $('.popularity-zone').animate({opacity: 0.05}, 9000);
-
-              var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
-              $('body').append($thanks);
-              $thanks.fadeIn();
-              setTimeout(function() {
-                $thanks.fadeOut(6666);
-              }, 3666);
+              goHome();
             });
           }
         });
         $('body').append($shareButton);
 
+        var $skipShareButton = $('<div class="shadow-button" id="skip-share-button">Skip The Share Please</div>');
+        $skipShareButton.click(function() {
+          goHome();
+        });
+        $('body').append($skipShareButton);
+
         $celebrityHeadTip.fadeIn();
-        $shareButton.fadeIn();
+        setTimeout(function() {
+          $shareButton.fadeIn();
+          $skipShareButton.fadeIn();
+        }, 500);
       }, 500);
     }, 800);
   });
+
+  var idleInterval = setInterval(function() {
+    var now = new Date();
+    var timeSinceLastCelebrityHeadClick = now - lastCelebrityHeadClickTime;
+    if (timeSinceLastCelebrityHeadClick > 29 * 1000) {
+      goHome();
+      clearInterval(idleInterval);
+    }
+  }, 500);
+
+  var hasGoneHome = false;
+  function goHome() {
+    if (hasGoneHome) {
+      return;
+    }
+    hasGoneHome = true;
+
+    $popularityShareWrapper.fadeOut(1000);
+    $celebrityHeadZone.fadeOut(1000);
+    $celebrityHeadBio.fadeOut(1000);
+    $('.celebrity-head-tip').fadeOut(1000);
+    $('#facebook-share-button').fadeOut(1000);
+    $('#skip-share-button').fadeOut(1000);
+    $('.popularity-zone').fadeOut(6666);
+
+    var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
+    $('body').append($thanks);
+    $thanks.fadeIn(1000);
+    setTimeout(function() {
+      $thanks.fadeOut(1000);
+    }, 3666);
+
+    setTimeout(finishedCallback, 3000);
+  }
 }
 
 function shareCanvasToFacebook(canvas, callback) {
@@ -588,7 +655,6 @@ function shareCanvasToFacebook(canvas, callback) {
       caption: 'Check out my Life in Review Score! Please tell me yours?',
       description: 'Life in Review scores you!'
     }, function(response) {
-      console.log(response);
       var success = response && !response.error_code;
       if (callback) {
         callback(success);
@@ -657,6 +723,38 @@ function calculateStats(item) {
     shares: item.shares ? item.shares.count : 0,
     comments: item.comments && item.comments.summary ? item.comments.summary.total_count : 0
   };
+}
+
+function calculateTotalPoints(bestContent) {
+  var totalPoints = 0;
+
+  bestContent.photos.forEach(function(photo) {
+    totalPoints += calculateStandardPoints(photo);
+  });
+
+  bestContent.posts.forEach(function(post) {
+    totalPoints += calculateStandardPoints(post);
+  });
+
+  bestContent.events.forEach(function(event) {
+    totalPoints += Math.round(calculateEventPoints(event) * 0.000005);
+  });
+
+  bestContent.likes.forEach(function(like) {
+    totalPoints += Math.round(calculateLikePoints(like) * 0.000005);
+  });
+
+  return totalPoints;
+}
+
+function populateBestContentWithPercentile(bestContent, callback) {
+  var endpoint = apiHost + '/score';
+  $.post(endpoint, {score: bestContent.totalPoints}, function(data) {
+    bestContent.percentile = data.percentile;
+    if (callback) {
+      callback();
+    }
+  });
 }
 
 /// Dom Rendering
@@ -754,7 +852,6 @@ function generateCompositeCanvas(bestContent, callback) {
   context.shadowOffsetY = 12;
 
   var imagesToLoad = 0;
-  var totalPoints = 0;
   var hasFinished = false;
 
   function imageFinishedDrawing() {
@@ -781,8 +878,6 @@ function generateCompositeCanvas(bestContent, callback) {
   }
 
   bestContent.photos.forEach(function(photo) {
-    totalPoints += calculateStandardPoints(photo);
-
     imagesToLoad += 1;
 
     var width = (Math.random() * 0.25 + 0.2) * canvas.width;
@@ -793,8 +888,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.posts.forEach(function(post) {
-    totalPoints += calculateStandardPoints(post);
-
     if (post.picture) {
       imagesToLoad += 1;
       drawArbitraryImage(post.picture, imageFinishedDrawing);
@@ -802,8 +895,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
-
     if (event.cover && event.cover.source) {
       imagesToLoad += 1;
       drawArbitraryImage(event.cover.source, imageFinishedDrawing);
@@ -811,8 +902,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
-
     if (like.cover && like.cover.source) {
       imagesToLoad += 1;
       drawArbitraryImage(like.cover.source, imageFinishedDrawing);
@@ -865,6 +954,7 @@ function generateCompositeCanvas(bestContent, callback) {
     var brandSquareY = canvas.height/2 - brandSquareHeight/2;
     var textX = brandSquareX + 10;
     var textWidth = brandSquareWidth - 20;
+    var percentile = bestContent.percentile ? Math.round(bestContent.percentile * 10) / 10 : 50;
 
     context.shadowColor = 'rgba(0, 0, 0, 0.7)';
     context.shadowBlur = 40;
@@ -888,7 +978,18 @@ function generateCompositeCanvas(bestContent, callback) {
     context.fillStyle = 'rgb(233, 30, 30)';
     context.font = 'bold 64px "Times New Roman"';
     context.fillText('I SCORED', canvas.width/2, brandSquareY + 120, brandSquareWidth - 20);
-    context.fillText(totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.fillText(bestContent.totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.restore();
+
+    context.save();
+    context.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    context.shadowBlur = 8;
+    context.shadowOffsetX = 3;
+    context.shadowOffsetY = 3;
+    context.fillStyle = 'rgb(255, 255, 5)';
+    context.font = 'bold 140px "Times New Roman"';
+    var percentText = percentile + '%';
+    context.fillText(percentText, canvas.width - context.measureText(percentText).width, 120);
     context.restore();
 
     context.fillText('What do you score?', textX, brandSquareY + 240, textWidth);
@@ -950,7 +1051,7 @@ function drawImageFromUrl(url, context, rect, callback) {
   img.src = url;
 }
 
-},{"./color":1,"./fb-renderer":4,"./lib/multiline":7}],4:[function(require,module,exports){
+},{"./celebrities":1,"./color":2,"./fb-renderer":5,"./lib/multiline":8}],5:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');
@@ -1064,10 +1165,16 @@ module.exports.renderedEvent = function _renderedEvent(event) {
   // data
   var name = div('fb-event-name', event.name);
   var when = div('fb-event-when', formattedDate(event.start_time));
-  var venue = div('fb-event-venue', event.place.name);
   var who = div('fb-event-who', event.attending_count + ' going, ' + event.maybe_count + ' maybe, ' + event.noreply_count + ' not replied');
   var goingImage = '<img class="fb-event-going-image" src="media/going.jpg" alt="Going" />';
-  html += div('fb-event-data', name + when + venue + who + goingImage);
+
+  if (event.place && event.place.name) {
+    var venue = div('fb-event-venue', event.place.name);
+    html += div('fb-event-data', name + when + venue + who + goingImage);
+  }
+  else {
+    html += div('fb-event-data', name + when + who + goingImage);
+  }
 
   // finisher
   html += '</div>';
@@ -1196,9 +1303,9 @@ function span(className, content) {
   return '<span class="' + className + '">' + content + '</span>';
 }
 
-},{"kutility":11,"moment":12}],5:[function(require,module,exports){
+},{"kutility":12,"moment":13}],6:[function(require,module,exports){
 
-var TEST_MODE = true;
+var TEST_MODE = false;
 
 module.exports.init = function(callback) {
   window.fbAsyncInit = function() {
@@ -1230,16 +1337,7 @@ module.exports.login = function(callback) {
     'user_friends',
     'user_likes',
     'user_posts',
-    'user_about_me',
-    'user_birthday',
-    'user_relationships',
-    'user_tagged_places',
-    'user_work_history',
-    'user_education_history',
-    'user_location',
-    'user_religion_politics',
-    'user_events',
-    'user_hometown'
+    'user_events'
   ].join(',');
   window.FB.login(callback, {scope: scope});
 };
@@ -1257,27 +1355,51 @@ module.exports.meDump = function(callback) {
   var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
   var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
-  var placesField = limit('tagged_places') + '{created_time,place{name}}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
-  var groupsField = limit('groups') + '{cover,description,name,privacy}';
-  var demographicFields = 'family{name,relationship},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover,picture';
-  var combinedFields = [
-    photosField,
-    albumsField,
-    postsField,
-    placesField,
-    friendsField,
-    eventsField,
-    likesField,
-    groupsField,
-    demographicFields
-  ].join(',');
-  api('/me?fields=' + combinedFields, callback);
+  var demographicFields = 'age_range,email,name,cover,picture';
+
+  var numberOfCalls = TEST_MODE ? 1 : 3;
+  if (TEST_MODE) {
+    var combinedFields = [
+      photosField,
+      albumsField,
+      postsField,
+      friendsField,
+      eventsField,
+      likesField,
+      demographicFields
+    ].join(',');
+    api('/me?fields=' + combinedFields, fbCallDidFinish);
+  }
+  else {
+    api('/me?fields=' + [postsField, friendsField].join(','), fbCallDidFinish);
+    api('/me?fields=' + [eventsField, likesField, demographicFields].join(','), fbCallDidFinish);
+    api('/me?fields=' + [photosField, albumsField].join(','), fbCallDidFinish);
+  }
+
+  var callsFinished = 0;
+  var combinedResponses = {};
+  function fbCallDidFinish(response) {
+    for (var key in response) {
+      if (response.hasOwnProperty(key)) {
+        combinedResponses[key] = response[key];
+      }
+    }
+
+    callsFinished += 1;
+    if (callsFinished !== numberOfCalls) {
+      return;
+    }
+
+    console.log('final output: ');
+    console.log(combinedResponses);
+    callback(combinedResponses);
+  }
 };
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
  // ----------------------------------------------------------------------------
  // Buzz, a Javascript HTML5 Audio library
  // v1.1.10 - Built 2015-04-20 13:05
@@ -2008,7 +2130,7 @@ module.exports.meDump = function(callback) {
     };
     return buzz;
 });
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 
 // Return an array to iterate over. For my uses this is
 // more efficient, because I only need to calculate the line text
@@ -2047,7 +2169,7 @@ module.exports.draw = function drawMultiline(context, text, linespacing, x, y, w
   return txt[txt.length - 1].y + linespacing;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 module.exports = LoadingView;
 
@@ -2089,7 +2211,7 @@ LoadingView.prototype.stop = function() {
   this.$el.fadeOut();
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 
 var TWEEN = require('tween.js');
 var buzz = require('./lib/buzz');
@@ -2124,7 +2246,7 @@ $(function() {
   update();
 
   fb.init(function() {
-    //friendsSound.loop().play();
+    friendsSound.loop().play();
     $facebookLoginButton.animate({opacity: 1}, 500);
   });
 
@@ -2186,7 +2308,7 @@ $(function() {
 
 });
 
-},{"./fb":5,"./fb-gravity-streamer":2,"./fb-popularity-calculator":3,"./fb-renderer":4,"./lib/buzz":6,"./loading-view":8,"./shims":10,"tween.js":13}],10:[function(require,module,exports){
+},{"./fb":6,"./fb-gravity-streamer":3,"./fb-popularity-calculator":4,"./fb-renderer":5,"./lib/buzz":7,"./loading-view":9,"./shims":11,"tween.js":14}],11:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -2214,7 +2336,7 @@ $(function() {
         };
 }());
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -2788,7 +2910,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -5984,7 +6106,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js
@@ -6860,4 +6982,4 @@ TWEEN.Interpolation = {
 
 })(this);
 
-},{}]},{},[9]);
+},{}]},{},[10]);

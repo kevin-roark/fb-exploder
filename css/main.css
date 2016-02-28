@@ -105,7 +105,8 @@ a {
 .popularity-zone {
   position: fixed;
   top: 40px; bottom: 40px;
-  left: 50%; width: 800px; margin-left: -400px;
+  left: 50%; min-width: 800px; width: 84%; max-width: 1200px;
+  transform: translateX(-50%);
   overflow: scroll;
 
   padding: 15px;
@@ -127,8 +128,8 @@ a {
   .popularity-share-zone {
     display: none;
     position: fixed;
-    top: 50%; margin-top: -300px;
-    left: 50%; width: 666px; margin-left: -333px;
+    top: 50%; margin-top: -400px;
+    left: 50%; width: 800px; margin-left: -400px;
   }
 
   .celebrity-head-bio {
@@ -155,16 +156,21 @@ a {
   }
   .celebrity-head-tip {
     display: none;
-    position: absolute; left: 10px; top: 30%; max-width: 240px;
-    font-size: 15px; line-height: 1.25; text-align: center;
+    position: absolute; left: 10px; bottom: 200px; max-width: 240px;
+    font-size: 15px; line-height: 1.25;
     background-color: rgb(255, 255, 255);
     color: rgb(255, 0, 0);
-    padding: 5px; border-radius: 5px;
+    padding: 8px; border-radius: 5px;
     box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
   }
   #facebook-share-button {
     display: none;
-    position: absolute; right: 20px; top: 35%; margin: 0;
+    position: absolute; right: 20px; bottom: 320px; margin: 0;
+  }
+  #skip-share-button {
+    display: none;
+    position: absolute; right: 20px; bottom: 240px; margin: 0;
+    font-size: 20px; background-color: white;
   }
     .celebrity-head {
       position: relative;
@@ -174,16 +180,45 @@ a {
       margin: 0px 25px;
       vertical-align: bottom;
     }
-      .celebrity-head:hover img {
-        box-shadow: 0px 0px 40px rgba(238, 170, 170, 0.75);
+      .celebrity-head.disabled {
+        cursor: auto;
       }
-      .celebrity-head img {
+      .celebrity-head-image {
         width: 100%;
+      }
+      .offset-celebrity-head {
+        display: none;
+        position: absolute; left: 12px; top: 12px;
+        opacity: 0.75;
+        width: 115%;
+      }
+      .celebrity-head:hover .offset-celebrity-head {
+        display: block;
+      }
+      .celebrity-head.disabled:hover .offset-celebrity-head {
+        display: none;
+      }
+      .celebrity-head-disabler {
+        position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0px 0px 40px 20px rgba(255, 255, 255, 0.9);
       }
       .celebrity-name {
         position: absolute; top: 105px; width: 100%;
         text-align: center; font-size: 14px; font-family: "Times New Roman";
         color: rgba(0, 0, 0, 0.87); text-shadow: 2px 2px rgba(0, 0, 0, 0.15);
+      }
+      .celebrity-head:hover .offset-celebrity-head {
+        display: block;
+      }
+      .celebrity-head.disabled:hover .offset-celebrity-head {
+        display: none;
+      }
+      .celebrity-head:hover .celebrity-name {
+        font-weight: bold;
+      }
+      .celebrity-head.disabled:hover .celebrity-name {
+        font-weight: normal;
       }
   .dreamy-message {
     position: fixed; top: 30%; left: 0; width: 100%; text-align: center;
@@ -202,9 +237,10 @@ a {
 }
 
 .popularity-section-header {
-  font-size: 26px;
+  font-size: 32px;
+  font-style: italic;
   font-family: "Times New Roman", serif;
-  margin-bottom: 12px;
+  margin: 5px 5px 12px 5px;
 }
 
 .popularity-fb-element-wrapper {
@@ -221,7 +257,7 @@ a {
 }
 
 .popularity-score-overlay {
-  position: absolute; right: 12px; top: 10px;
+  position: absolute; right: 15px; top: 10px;
   font-size: 44px;
   font-family: "Times New Roman", serif;
   color: rgb(233, 30, 30);

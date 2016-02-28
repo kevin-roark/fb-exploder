@@ -2,11 +2,14 @@
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
 var color = require('./color');
+var celebrities = require('./celebrities');
 
 var PiecesToShow = 3;
 var LikeValue = 1;
 var CommentValue = 2;
 var ShareValue = 3;
+
+var apiHost = 'http://localhost:3000';
 
 var $container;
 $(function() {
@@ -17,13 +20,18 @@ $(function() {
 
 module.exports.start = function _start(dump, finishedCallback) {
   var hasEnteredSharingState = false;
+  var hasReceivedPercentile = false;
 
   var bestPhotos = dump.photos ? calculateBestElements(dump.photos.data, calculateStandardPoints) : [];
   var bestPosts = dump.posts ? calculateBestElements(dump.posts.data, calculateStandardPoints) : [];
   var bestLikes = dump.likes ? calculateBestElements(dump.likes.data, calculateLikePoints) : [];
   var bestEvents = dump.events ? calculateBestElements(dump.events.data, calculateEventPoints) : [];
   var bestContent = {photos: bestPhotos, posts: bestPosts, likes: bestLikes, events: bestEvents};
-  console.log(bestContent);
+  bestContent.totalPoints = calculateTotalPoints(bestContent);
+
+  populateBestContentWithPercentile(bestContent, function() {
+    hasReceivedPercentile = true;
+  });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
   $container.append($popularityZone);
@@ -48,7 +56,9 @@ module.exports.start = function _start(dump, finishedCallback) {
       return;
     }
 
-    enterSharingState(bestContent);
+    hasEnteredSharingState = true;
+
+    enterSharingState(bestContent, finishedCallback);
   });
   $shareButtonWrapper.append($collageButton);
   $popularityZone.append($shareButtonWrapper);
@@ -67,11 +77,17 @@ module.exports.start = function _start(dump, finishedCallback) {
     $collageButton.animate({opacity: 1}, 800);
   }, 1600);
 
-  //setTimeout(finishedCallback, 30000);
+  setTimeout(function() {
+    if (!hasEnteredSharingState) {
+      $('.popularity-zone').fadeOut(10 * 1000);
+      finishedCallback();
+    }
+  }, 27 * 1000);
 };
 
-function enterSharingState(bestContent) {
+function enterSharingState(bestContent, finishedCallback) {
   var hasSharedToFacebook = false;
+  var lastCelebrityHeadClickTime = new Date();
 
   var $popularityShareWrapper = $('<div class="popularity-share-wrapper">');
   $container.append($popularityShareWrapper);
@@ -88,41 +104,50 @@ function enterSharingState(bestContent) {
 
   generateCompositeCanvas(bestContent, function(compositeCanvas) {
     var $canvas = $(compositeCanvas);
-    $canvas.css('max-width', '666px');
+    $canvas.css('width', '100%');
     $popularityShareZone.append($canvas);
     $popularityShareZone.fadeIn();
 
     var context = compositeCanvas.getContext('2d');
 
-    $.getJSON('media/celebrities.json', function(celebrities) {
-      celebrities.forEach(function(celeb, idx) {
-        var $head = $('<div class="celebrity-head">');
-        $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
-        $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
-        $head.hover(function() {
-          $celebrityHeadBio.text(celeb.bio);
-        });
-        $head.click(function() {
-          if (hasSharedToFacebook) {
-            return;
-          }
+    celebrities.forEach(function(celeb, idx) {
+      var percent = bestContent.percentile ? Math.round(bestContent.percentile) : 50;
+      var headIsDisabled = (idx * 5) > percent;
 
-          var width = Math.random() * 120 + 80;
-          var randomRect = {
-            x: Math.random() * (compositeCanvas.width - width),
-            y: Math.random() * (compositeCanvas.height - width),
-            w: width,
-            h: width
-          };
-          context.shadowColor = color.randomColor();
-          drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
-        });
-        $celebrityHeadZone.append($head);
-
-        if (idx === 0) {
-          $celebrityHeadBio.text(celeb.bio);
-        }
+      var $head = $('<div class="celebrity-head">');
+      $head.append($('<img class="offset-celebrity-head" src="media/celebrity_heads/' + celeb.image + '">'));
+      $head.append($('<img class="celebrity-head-image" src="media/celebrity_heads/' + celeb.image + '">'));
+      $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
+      if (headIsDisabled) {
+        $head.addClass('disabled');
+        $head.append($('<div class="celebrity-head-disabler">'));
+      }
+      $head.hover(function() {
+        var text = headIsDisabled ? "You (scum) Haven't Earned The Right to interface with " + celeb.name : celeb.bio;
+        $celebrityHeadBio.text(text);
       });
+      $head.click(function() {
+        if (hasSharedToFacebook || headIsDisabled) {
+          return;
+        }
+
+        var width = Math.random() * 120 + 80;
+        var randomRect = {
+          x: Math.random() * (compositeCanvas.width - width),
+          y: Math.random() * (compositeCanvas.height - width),
+          w: width,
+          h: width
+        };
+        context.shadowColor = color.randomColor();
+        drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+
+        lastCelebrityHeadClickTime = new Date();
+      });
+      $celebrityHeadZone.append($head);
+
+      if (idx === 0) {
+        $celebrityHeadBio.text(celeb.bio);
+      }
     });
 
     setTimeout(function() {
@@ -130,7 +155,11 @@ function enterSharingState(bestContent) {
       $celebrityHeadBio.fadeIn();
 
       setTimeout(function() {
-        var $celebrityHeadTip = $('<div class="celebrity-head-tip">Your Life Score has earned you valuable celebrities! Click their heads to personalize your Life in Review Collage, then share to Facebook below!</div>');
+        var percent = bestContent.percentile ? Math.round(bestContent.percentile) : 50;
+        var celebrityTipText = 'Your Life Score of <i>' + bestContent.totalPoints +
+          '</i> places you in the <i>top ' + percent + '%</i> of all Facebook Users and has earned you some valuable celebrities!' +
+          ' Click their heads to personalize your Life in Review Collage, then share to Facebook below!';
+        var $celebrityHeadTip = $('<div class="celebrity-head-tip">' + celebrityTipText + '</div>');
         $('body').append($celebrityHeadTip);
 
         var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
@@ -140,29 +169,60 @@ function enterSharingState(bestContent) {
             $('.celebrity-head').css('pointer', 'auto');
 
             shareCanvasToFacebook(compositeCanvas, function() {
-              $popularityShareWrapper.hide();
-              $celebrityHeadZone.hide();
-              $celebrityHeadBio.hide();
-              $celebrityHeadTip.hide();
-              $shareButton.hide();
-              $('.popularity-zone').animate({opacity: 0.05}, 9000);
-
-              var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
-              $('body').append($thanks);
-              $thanks.fadeIn();
-              setTimeout(function() {
-                $thanks.fadeOut(6666);
-              }, 3666);
+              goHome();
             });
           }
         });
         $('body').append($shareButton);
 
+        var $skipShareButton = $('<div class="shadow-button" id="skip-share-button">Skip The Share Please</div>');
+        $skipShareButton.click(function() {
+          goHome();
+        });
+        $('body').append($skipShareButton);
+
         $celebrityHeadTip.fadeIn();
-        $shareButton.fadeIn();
+        setTimeout(function() {
+          $shareButton.fadeIn();
+          $skipShareButton.fadeIn();
+        }, 500);
       }, 500);
     }, 800);
   });
+
+  var idleInterval = setInterval(function() {
+    var now = new Date();
+    var timeSinceLastCelebrityHeadClick = now - lastCelebrityHeadClickTime;
+    if (timeSinceLastCelebrityHeadClick > 29 * 1000) {
+      goHome();
+      clearInterval(idleInterval);
+    }
+  }, 500);
+
+  var hasGoneHome = false;
+  function goHome() {
+    if (hasGoneHome) {
+      return;
+    }
+    hasGoneHome = true;
+
+    $popularityShareWrapper.fadeOut(1000);
+    $celebrityHeadZone.fadeOut(1000);
+    $celebrityHeadBio.fadeOut(1000);
+    $('.celebrity-head-tip').fadeOut(1000);
+    $('#facebook-share-button').fadeOut(1000);
+    $('#skip-share-button').fadeOut(1000);
+    $('.popularity-zone').fadeOut(6666);
+
+    var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
+    $('body').append($thanks);
+    $thanks.fadeIn(1000);
+    setTimeout(function() {
+      $thanks.fadeOut(1000);
+    }, 3666);
+
+    setTimeout(finishedCallback, 3000);
+  }
 }
 
 function shareCanvasToFacebook(canvas, callback) {
@@ -183,7 +243,6 @@ function shareCanvasToFacebook(canvas, callback) {
       caption: 'Check out my Life in Review Score! Please tell me yours?',
       description: 'Life in Review scores you!'
     }, function(response) {
-      console.log(response);
       var success = response && !response.error_code;
       if (callback) {
         callback(success);
@@ -252,6 +311,38 @@ function calculateStats(item) {
     shares: item.shares ? item.shares.count : 0,
     comments: item.comments && item.comments.summary ? item.comments.summary.total_count : 0
   };
+}
+
+function calculateTotalPoints(bestContent) {
+  var totalPoints = 0;
+
+  bestContent.photos.forEach(function(photo) {
+    totalPoints += calculateStandardPoints(photo);
+  });
+
+  bestContent.posts.forEach(function(post) {
+    totalPoints += calculateStandardPoints(post);
+  });
+
+  bestContent.events.forEach(function(event) {
+    totalPoints += Math.round(calculateEventPoints(event) * 0.000005);
+  });
+
+  bestContent.likes.forEach(function(like) {
+    totalPoints += Math.round(calculateLikePoints(like) * 0.000005);
+  });
+
+  return totalPoints;
+}
+
+function populateBestContentWithPercentile(bestContent, callback) {
+  var endpoint = apiHost + '/score';
+  $.post(endpoint, {score: bestContent.totalPoints}, function(data) {
+    bestContent.percentile = data.percentile;
+    if (callback) {
+      callback();
+    }
+  });
 }
 
 /// Dom Rendering
@@ -349,7 +440,6 @@ function generateCompositeCanvas(bestContent, callback) {
   context.shadowOffsetY = 12;
 
   var imagesToLoad = 0;
-  var totalPoints = 0;
   var hasFinished = false;
 
   function imageFinishedDrawing() {
@@ -376,8 +466,6 @@ function generateCompositeCanvas(bestContent, callback) {
   }
 
   bestContent.photos.forEach(function(photo) {
-    totalPoints += calculateStandardPoints(photo);
-
     imagesToLoad += 1;
 
     var width = (Math.random() * 0.25 + 0.2) * canvas.width;
@@ -388,8 +476,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.posts.forEach(function(post) {
-    totalPoints += calculateStandardPoints(post);
-
     if (post.picture) {
       imagesToLoad += 1;
       drawArbitraryImage(post.picture, imageFinishedDrawing);
@@ -397,8 +483,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
-
     if (event.cover && event.cover.source) {
       imagesToLoad += 1;
       drawArbitraryImage(event.cover.source, imageFinishedDrawing);
@@ -406,8 +490,6 @@ function generateCompositeCanvas(bestContent, callback) {
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
-
     if (like.cover && like.cover.source) {
       imagesToLoad += 1;
       drawArbitraryImage(like.cover.source, imageFinishedDrawing);
@@ -460,6 +542,7 @@ function generateCompositeCanvas(bestContent, callback) {
     var brandSquareY = canvas.height/2 - brandSquareHeight/2;
     var textX = brandSquareX + 10;
     var textWidth = brandSquareWidth - 20;
+    var percentile = bestContent.percentile ? Math.round(bestContent.percentile * 10) / 10 : 50;
 
     context.shadowColor = 'rgba(0, 0, 0, 0.7)';
     context.shadowBlur = 40;
@@ -483,7 +566,18 @@ function generateCompositeCanvas(bestContent, callback) {
     context.fillStyle = 'rgb(233, 30, 30)';
     context.font = 'bold 64px "Times New Roman"';
     context.fillText('I SCORED', canvas.width/2, brandSquareY + 120, brandSquareWidth - 20);
-    context.fillText(totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.fillText(bestContent.totalPoints, canvas.width/2, brandSquareY + 180, brandSquareWidth - 20);
+    context.restore();
+
+    context.save();
+    context.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    context.shadowBlur = 8;
+    context.shadowOffsetX = 3;
+    context.shadowOffsetY = 3;
+    context.fillStyle = 'rgb(255, 255, 5)';
+    context.font = 'bold 140px "Times New Roman"';
+    var percentText = percentile + '%';
+    context.fillText(percentText, canvas.width - context.measureText(percentText).width, 120);
     context.restore();
 
     context.fillText('What do you score?', textX, brandSquareY + 240, textWidth);

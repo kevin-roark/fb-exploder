@@ -1,5 +1,5 @@
 
-var TEST_MODE = true;
+var TEST_MODE = false;
 
 module.exports.init = function(callback) {
   window.fbAsyncInit = function() {
@@ -31,16 +31,7 @@ module.exports.login = function(callback) {
     'user_friends',
     'user_likes',
     'user_posts',
-    'user_about_me',
-    'user_birthday',
-    'user_relationships',
-    'user_tagged_places',
-    'user_work_history',
-    'user_education_history',
-    'user_location',
-    'user_religion_politics',
-    'user_events',
-    'user_hometown'
+    'user_events'
   ].join(',');
   window.FB.login(callback, {scope: scope});
 };
@@ -58,22 +49,46 @@ module.exports.meDump = function(callback) {
   var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
   var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
-  var placesField = limit('tagged_places') + '{created_time,place{name}}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
-  var groupsField = limit('groups') + '{cover,description,name,privacy}';
-  var demographicFields = 'family{name,relationship},about,age_range,bio,birthday,education,email,name,hometown{name},location{name},political,relationship_status,religion,work,cover,picture';
-  var combinedFields = [
-    photosField,
-    albumsField,
-    postsField,
-    placesField,
-    friendsField,
-    eventsField,
-    likesField,
-    groupsField,
-    demographicFields
-  ].join(',');
-  api('/me?fields=' + combinedFields, callback);
+  var demographicFields = 'age_range,email,name,cover,picture';
+
+  var numberOfCalls = TEST_MODE ? 1 : 3;
+  if (TEST_MODE) {
+    var combinedFields = [
+      photosField,
+      albumsField,
+      postsField,
+      friendsField,
+      eventsField,
+      likesField,
+      demographicFields
+    ].join(',');
+    api('/me?fields=' + combinedFields, fbCallDidFinish);
+  }
+  else {
+    api('/me?fields=' + [postsField, friendsField].join(','), fbCallDidFinish);
+    api('/me?fields=' + [eventsField, likesField, demographicFields].join(','), fbCallDidFinish);
+    api('/me?fields=' + [photosField, albumsField].join(','), fbCallDidFinish);
+  }
+
+  var callsFinished = 0;
+  var combinedResponses = {};
+  function fbCallDidFinish(response) {
+    for (var key in response) {
+      if (response.hasOwnProperty(key)) {
+        combinedResponses[key] = response[key];
+      }
+    }
+
+    callsFinished += 1;
+    if (callsFinished !== numberOfCalls) {
+      return;
+    }
+
+    console.log('final output: ');
+    console.log(combinedResponses);
+    callback(combinedResponses);
+  }
 };
