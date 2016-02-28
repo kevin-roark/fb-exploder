@@ -616,7 +616,8 @@ function enterSharingState(bestContent) {
       var headIsDisabled = (idx * 5) > percent;
 
       var $head = $('<div class="celebrity-head">');
-      $head.append($('<img src="media/celebrity_heads/' + celeb.image + '">'));
+      $head.append($('<img class="offset-celebrity-head" src="media/celebrity_heads/' + celeb.image + '">'));
+      $head.append($('<img class="celebrity-head-image" src="media/celebrity_heads/' + celeb.image + '">'));
       $head.append($('<div class="celebrity-name">' + celeb.name + '</div>'));
       if (headIsDisabled) {
         $head.addClass('disabled');

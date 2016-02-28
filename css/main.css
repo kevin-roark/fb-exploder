@@ -178,24 +178,42 @@ a {
       .celebrity-head.disabled {
         cursor: auto;
       }
-      .celebrity-head:hover img {
-        box-shadow: 0px 0px 60px 40px rgba(238, 170, 170, 0.85);
+      .celebrity-head-image {
+        width: 100%;
       }
-      .celebrity-head.disabled:hover img {
-        box-shadow: none;
+      .offset-celebrity-head {
+        display: none;
+        position: absolute; left: 12px; top: 12px;
+        opacity: 0.75;
+        width: 115%;
+      }
+      .celebrity-head:hover .offset-celebrity-head {
+        display: block;
+      }
+      .celebrity-head.disabled:hover .offset-celebrity-head {
+        display: none;
       }
       .celebrity-head-disabler {
         position: absolute; left: 0; top: 0; width: 100%; height: 100%;
         background-color: rgba(255, 255, 255, 0.8);
         box-shadow: 0px 0px 40px 20px rgba(255, 255, 255, 0.9);
       }
-      .celebrity-head img {
-        width: 100%;
-      }
       .celebrity-name {
         position: absolute; top: 105px; width: 100%;
         text-align: center; font-size: 14px; font-family: "Times New Roman";
         color: rgba(0, 0, 0, 0.87); text-shadow: 2px 2px rgba(0, 0, 0, 0.15);
+      }
+      .celebrity-head:hover .offset-celebrity-head {
+        display: block;
+      }
+      .celebrity-head.disabled:hover .offset-celebrity-head {
+        display: none;
+      }
+      .celebrity-head:hover .celebrity-name {
+        font-weight: bold;
+      }
+      .celebrity-head.disabled:hover .celebrity-name {
+        font-weight: normal;
       }
   .dreamy-message {
     position: fixed; top: 30%; left: 0; width: 100%; text-align: center;
