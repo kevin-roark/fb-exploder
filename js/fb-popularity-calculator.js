@@ -228,26 +228,28 @@ function enterSharingState(bestContent, finishedCallback) {
 function shareCanvasToFacebook(canvas, callback) {
   // share image first
   uploadCanvasToCloudinary(canvas, function(error, imageURL) {
-    if (!imageURL) {
-      // TODO: handle cloudinary failure
-      return;
-    }
-
     console.log(imageURL);
+    shareToFacebookWithImageURL(imageURL);
 
-    // share link to feed with share UI
-    window.FB.ui({
-      method: 'feed',
-      link: 'www.lifeinreview.com',
-      picture: imageURL,
-      caption: 'Check out my Life in Review Score! Please tell me yours?',
-      description: 'Life in Review scores you!'
-    }, function(response) {
-      var success = response && !response.error_code;
-      if (callback) {
-        callback(success);
+    function shareToFacebookWithImageURL(imageURL) {
+      var options = {
+        method: 'feed',
+        link: 'www.lifeinreview.com',
+        picture: imageURL,
+        caption: 'Check out my Life in Review Score! Please tell me yours?',
+        description: 'Life in Review scores you!'
+      };
+      if (imageURL) {
+        options.picture = imageURL;
       }
-    });
+
+      window.FB.ui(options, function(response) {
+        var success = response && !response.error_code;
+        if (callback) {
+          callback(success);
+        }
+      });
+    }
   });
 }
 
