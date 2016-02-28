@@ -56,7 +56,9 @@ module.exports.start = function _start(dump, finishedCallback) {
       return;
     }
 
-    enterSharingState(bestContent);
+    hasEnteredSharingState = true;
+
+    enterSharingState(bestContent, finishedCallback);
   });
   $shareButtonWrapper.append($collageButton);
   $popularityZone.append($shareButtonWrapper);
@@ -75,11 +77,17 @@ module.exports.start = function _start(dump, finishedCallback) {
     $collageButton.animate({opacity: 1}, 800);
   }, 1600);
 
-  //setTimeout(finishedCallback, 30000);
+  setTimeout(function() {
+    if (!hasEnteredSharingState) {
+      $('.popularity-zone').fadeOut(10 * 1000);
+      finishedCallback();
+    }
+  }, 27 * 1000);
 };
 
-function enterSharingState(bestContent) {
+function enterSharingState(bestContent, finishedCallback) {
   var hasSharedToFacebook = false;
+  var lastCelebrityHeadClickTime = new Date();
 
   var $popularityShareWrapper = $('<div class="popularity-share-wrapper">');
   $container.append($popularityShareWrapper);
@@ -132,6 +140,8 @@ function enterSharingState(bestContent) {
         };
         context.shadowColor = color.randomColor();
         drawImageFromUrl('media/celebrity_heads/' + celeb.image, compositeCanvas.getContext('2d'), randomRect);
+
+        lastCelebrityHeadClickTime = new Date();
       });
       $celebrityHeadZone.append($head);
 
@@ -159,31 +169,60 @@ function enterSharingState(bestContent) {
             $('.celebrity-head').css('pointer', 'auto');
 
             shareCanvasToFacebook(compositeCanvas, function() {
-              $popularityShareWrapper.hide();
-              $celebrityHeadZone.hide();
-              $celebrityHeadBio.hide();
-              $celebrityHeadTip.hide();
-              $shareButton.hide();
-              $('.popularity-zone').animate({opacity: 0.05}, 9000);
-
-              var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
-              $('body').append($thanks);
-              $thanks.fadeIn();
-              setTimeout(function() {
-                $thanks.fadeOut(6666);
-              }, 3666);
+              goHome();
             });
           }
         });
         $('body').append($shareButton);
 
+        var $skipShareButton = $('<div class="shadow-button" id="skip-share-button">Skip The Share Please</div>');
+        $skipShareButton.click(function() {
+          goHome();
+        });
+        $('body').append($skipShareButton);
+
         $celebrityHeadTip.fadeIn();
         setTimeout(function() {
           $shareButton.fadeIn();
+          $skipShareButton.fadeIn();
         }, 500);
       }, 500);
     }, 800);
   });
+
+  var idleInterval = setInterval(function() {
+    var now = new Date();
+    var timeSinceLastCelebrityHeadClick = now - lastCelebrityHeadClickTime;
+    if (timeSinceLastCelebrityHeadClick > 29 * 1000) {
+      goHome();
+      clearInterval(idleInterval);
+    }
+  }, 500);
+
+  var hasGoneHome = false;
+  function goHome() {
+    if (hasGoneHome) {
+      return;
+    }
+    hasGoneHome = true;
+
+    $popularityShareWrapper.fadeOut(1000);
+    $celebrityHeadZone.fadeOut(1000);
+    $celebrityHeadBio.fadeOut(1000);
+    $('.celebrity-head-tip').fadeOut(1000);
+    $('#facebook-share-button').fadeOut(1000);
+    $('#skip-share-button').fadeOut(1000);
+    $('.popularity-zone').fadeOut(6666);
+
+    var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
+    $('body').append($thanks);
+    $thanks.fadeIn(1000);
+    setTimeout(function() {
+      $thanks.fadeOut(1000);
+    }, 3666);
+
+    setTimeout(finishedCallback, 3000);
+  }
 }
 
 function shareCanvasToFacebook(canvas, callback) {
@@ -287,11 +326,11 @@ function calculateTotalPoints(bestContent) {
   });
 
   bestContent.events.forEach(function(event) {
-    totalPoints += Math.round(calculateEventPoints(event) * 0.0001);
+    totalPoints += Math.round(calculateEventPoints(event) * 0.00005);
   });
 
   bestContent.likes.forEach(function(like) {
-    totalPoints += Math.round(calculateLikePoints(like) * 0.0001);
+    totalPoints += Math.round(calculateLikePoints(like) * 0.00005);
   });
 
   return totalPoints;
