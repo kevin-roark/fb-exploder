@@ -1282,8 +1282,10 @@ function renderedStats(post) {
 
   for (var i = 0; i < commentCount; i++) {
     var comment = post.comments.data[i];
+    var fromName = comment && comment.from ? comment.from.name : '';
+
     html += '<div class="fb-post-comment">';
-    html += '<span class="fb-post-comment-name">' + comment.from.name + '</span>';
+    html += '<span class="fb-post-comment-name">' + fromName + '</span>';
     html += ' <span class="fb-post-comment-message">' + comment.message + '</span>';
     html += ' <span class="fb-post-comment-date">' + formattedDate(comment.created_time) + '</span>';
     html += '</div>';
