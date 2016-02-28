@@ -342,10 +342,10 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
-  var minSpeed = options.minSpeed || 4;
+  var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
-  var minDelay = options.minDelay || 3000;
-  var delayVariance = options.delayVariance || 5000;
+  var minDelay = options.minDelay || 1000;
+  var delayVariance = options.delayVariance || 1200;
 
   var dataIndex = 0;
   var activeRenderedElements = [];
@@ -491,8 +491,8 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   setTimeout(function() {
     if (!hasEnteredSharingState) {
-      $('.popularity-zone').fadeOut(10 * 1000);
-      finishedCallback();
+      $('.popularity-zone').fadeOut(3000);
+      setTimeout(finishedCallback, 3000);
     }
   }, 20 * 1000);
 };
@@ -624,7 +624,7 @@ function enterSharingState(bestContent, finishedCallback) {
     $('.celebrity-head-tip').fadeOut(1000);
     $('#facebook-share-button').fadeOut(1000);
     $('#skip-share-button').fadeOut(1000);
-    $('.popularity-zone').fadeOut(6666);
+    $('.popularity-zone').fadeOut(3000);
 
     var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
     $('body').append($thanks);

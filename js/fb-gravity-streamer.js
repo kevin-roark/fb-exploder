@@ -209,10 +209,10 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
-  var minSpeed = options.minSpeed || 4;
+  var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
-  var minDelay = options.minDelay || 3000;
-  var delayVariance = options.delayVariance || 5000;
+  var minDelay = options.minDelay || 1000;
+  var delayVariance = options.delayVariance || 1200;
 
   var dataIndex = 0;
   var activeRenderedElements = [];
