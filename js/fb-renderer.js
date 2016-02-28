@@ -226,6 +226,9 @@ function renderedStats(post) {
 
   for (var i = 0; i < commentCount; i++) {
     var comment = post.comments.data[i];
+    if (!comment) {
+      continue;
+    }
     var fromName = comment && comment.from ? comment.from.name : '';
 
     html += '<div class="fb-post-comment">';
