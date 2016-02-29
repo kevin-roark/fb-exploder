@@ -135,9 +135,9 @@ module.exports.randomBrightColor = function() {
 var kt = require('kutility');
 var fbRenderer = require('./fb-renderer');
 
-var DelayBeforePhotoWaterfall = 6666;
-var DelayBeforePostsWaterfall = 15666;
-var DelayBeforeDataWaterfall = 23666;
+var DelayBeforePhotoWaterfall = 9999;
+var DelayBeforePostsWaterfall = 18666;
+var DelayBeforeDataWaterfall = 27666;
 
 var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers;
 $(function() {
@@ -310,7 +310,7 @@ function handleAlbums(albums) {
   setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
     minWidth: 100,
     widthVariance: 350,
-    minDelay: 400,
+    minDelay: 200,
     delayVariance: 1000
   });
   setTimeout(function() {
@@ -342,13 +342,13 @@ function handleLikes(likes) {
 function handleEvents(events) {
   if (!events) { return; }
 
-  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
-  setTimeout(function() {
+  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1000});
+  /* setTimeout(function() {
     setupStaticDataStack(events, fbRenderer.renderedEvent, {
       minWidth: 300,
       widthVariance: 200
     });
-  }, 45 * 1000);
+  }, 45 * 1000); */
 }
 
 function setupDataStream(data, renderer, $layer, options) {
@@ -552,7 +552,7 @@ module.exports.start = function _start(dump, finishedCallback) {
       $('.popularity-zone').fadeOut(3000);
       setTimeout(finishedCallback, 3000);
     }
-  }, 20 * 1000);
+  }, 15 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -2301,7 +2301,7 @@ $(function() {
     $el: $('#loading-view'),
     baseText: 'Gathering and Crunching your Facebook data'
   });
-  var friendsSound = new buzz.sound('media/friends', {
+  var friendsSound = new buzz.sound('media/friends3', {
     formats: ['mp3'],
     webAudioApi: true
   });
@@ -6329,6 +6329,12 @@ TWEEN.Tween = function (object) {
 
 			}
 
+			// If `to()` specifies a property that doesn't exist in the source object,
+			// we should not set that property in the object
+			if (_valuesStart[property] === undefined) {
+				continue;
+			}
+
 			_valuesStart[property] = _object[property];
 
 			if ((_valuesStart[property] instanceof Array) === false) {
@@ -6467,6 +6473,11 @@ TWEEN.Tween = function (object) {
 
 		for (property in _valuesEnd) {
 
+			// Don't update properties that do not exist in the source object
+			if (_valuesStart[property] === undefined) {
+				continue;
+			}
+
 			var start = _valuesStart[property] || 0;
 			var end = _valuesEnd[property];
 
@@ -6478,7 +6489,12 @@ TWEEN.Tween = function (object) {
 
 				// Parses relative end values with start as base (e.g.: +10, -3)
 				if (typeof (end) === 'string') {
-					end = start + parseFloat(end, 10);
+
+					if (end.startsWith('+') || end.startsWith('-')) {
+						end = start + parseFloat(end, 10);
+					} else {
+						end = parseFloat(end, 10);
+					}
 				}
 
 				// Protect against non numeric properties.
@@ -7033,12 +7049,12 @@ TWEEN.Interpolation = {
 			return TWEEN;
 		});
 
-	} else if (typeof exports === 'object') {
+	} else if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 		// Node.js
 		module.exports = TWEEN;
 
-	} else {
+	} else if (root !== undefined) {
 
 		// Global variable
 		root.TWEEN = TWEEN;

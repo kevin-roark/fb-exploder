@@ -2,9 +2,9 @@
 var kt = require('kutility');
 var fbRenderer = require('./fb-renderer');
 
-var DelayBeforePhotoWaterfall = 6666;
-var DelayBeforePostsWaterfall = 15666;
-var DelayBeforeDataWaterfall = 23666;
+var DelayBeforePhotoWaterfall = 9999;
+var DelayBeforePostsWaterfall = 18666;
+var DelayBeforeDataWaterfall = 27666;
 
 var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers;
 $(function() {
@@ -177,7 +177,7 @@ function handleAlbums(albums) {
   setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
     minWidth: 100,
     widthVariance: 350,
-    minDelay: 400,
+    minDelay: 200,
     delayVariance: 1000
   });
   setTimeout(function() {
@@ -209,13 +209,13 @@ function handleLikes(likes) {
 function handleEvents(events) {
   if (!events) { return; }
 
-  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
-  setTimeout(function() {
+  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1000});
+  /* setTimeout(function() {
     setupStaticDataStack(events, fbRenderer.renderedEvent, {
       minWidth: 300,
       widthVariance: 200
     });
-  }, 45 * 1000);
+  }, 45 * 1000); */
 }
 
 function setupDataStream(data, renderer, $layer, options) {

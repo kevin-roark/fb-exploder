@@ -82,7 +82,7 @@ module.exports.start = function _start(dump, finishedCallback) {
       $('.popularity-zone').fadeOut(3000);
       setTimeout(finishedCallback, 3000);
     }
-  }, 20 * 1000);
+  }, 15 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {

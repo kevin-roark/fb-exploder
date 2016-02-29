@@ -22,7 +22,7 @@ $(function() {
     $el: $('#loading-view'),
     baseText: 'Gathering and Crunching your Facebook data'
   });
-  var friendsSound = new buzz.sound('media/friends', {
+  var friendsSound = new buzz.sound('media/friends3', {
     formats: ['mp3'],
     webAudioApi: true
   });
