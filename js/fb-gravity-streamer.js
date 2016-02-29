@@ -202,7 +202,7 @@ function handleLikes(likes) {
 
   setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
   setTimeout(function() {
-    setupStaticDataStack(likes, fbRenderer.renderedLike);
+    setupStaticDataStack(likes, fbRenderer.renderedLike, {minDelay: 1000});
   }, 45 * 1000);
 }
 
@@ -287,10 +287,11 @@ function setupStaticDataStack(data, renderer, options) {
   }
 
   var minWidth = options.minWidth || 200;
+  var minDelay = options.minDelay || 100;
   var widthVariance = options.widthVariance || 150;
   var elementLifespan = options.elementLifespan || 4000;
   var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
-  var delayDecayRate = options.delayDecayRate || 0.998; // exponential
+  var delayDecayRate = options.delayDecayRate || 0.997; // exponential
 
   var currentDelayBetweenElements = initialDelayBetweenElements;
 
@@ -314,6 +315,7 @@ function setupStaticDataStack(data, renderer, options) {
 
     setTimeout(stackData, currentDelayBetweenElements);
     currentDelayBetweenElements = Math.pow(currentDelayBetweenElements, delayDecayRate);
+    currentDelayBetweenElements = Math.max(currentDelayBetweenElements, minDelay);
   }
 }
 
