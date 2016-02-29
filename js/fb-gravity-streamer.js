@@ -210,12 +210,14 @@ function handleEvents(events) {
   if (!events) { return; }
 
   setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1000});
-  /* setTimeout(function() {
+  setTimeout(function() {
     setupStaticDataStack(events, fbRenderer.renderedEvent, {
       minWidth: 300,
-      widthVariance: 200
+      widthVariance: 200,
+      minDelay: 1000,
+      delayDecayRate: 0.9985
     });
-  }, 45 * 1000); */
+  }, 45 * 1000);
 }
 
 function setupDataStream(data, renderer, $layer, options) {
@@ -232,13 +234,21 @@ function setupDataStream(data, renderer, $layer, options) {
   var maxSpeed = options.maxSpeed || 10;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
+  var totalStreamTime = options.totalStreamTime || 4 * 60000; // 4 minutes
 
   var dataIndex = 0;
   var activeRenderedElements = [];
+  var stillStreaming = true;
+
+  setTimeout(function() {
+    stillStreaming = false;
+  }, totalStreamTime);
 
   function doNextItem() {
-    var delay = Math.random() * delayVariance + minDelay;
-    setTimeout(doNextItem, delay);
+    if (stillStreaming) {
+      var delay = Math.random() * delayVariance + minDelay;
+      setTimeout(doNextItem, delay);
+    }
 
     if (!shouldUpdate) {
       return;

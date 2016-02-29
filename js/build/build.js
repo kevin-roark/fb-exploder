@@ -343,12 +343,14 @@ function handleEvents(events) {
   if (!events) { return; }
 
   setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1000});
-  /* setTimeout(function() {
+  setTimeout(function() {
     setupStaticDataStack(events, fbRenderer.renderedEvent, {
       minWidth: 300,
-      widthVariance: 200
+      widthVariance: 200,
+      minDelay: 1000,
+      delayDecayRate: 0.9985
     });
-  }, 45 * 1000); */
+  }, 45 * 1000);
 }
 
 function setupDataStream(data, renderer, $layer, options) {
@@ -365,13 +367,21 @@ function setupDataStream(data, renderer, $layer, options) {
   var maxSpeed = options.maxSpeed || 10;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
+  var totalStreamTime = options.totalStreamTime || 4 * 60000; // 4 minutes
 
   var dataIndex = 0;
   var activeRenderedElements = [];
+  var stillStreaming = true;
+
+  setTimeout(function() {
+    stillStreaming = false;
+  }, totalStreamTime);
 
   function doNextItem() {
-    var delay = Math.random() * delayVariance + minDelay;
-    setTimeout(doNextItem, delay);
+    if (stillStreaming) {
+      var delay = Math.random() * delayVariance + minDelay;
+      setTimeout(doNextItem, delay);
+    }
 
     if (!shouldUpdate) {
       return;
@@ -6331,12 +6341,6 @@ TWEEN.Tween = function (object) {
 
 			}
 
-			// If `to()` specifies a property that doesn't exist in the source object,
-			// we should not set that property in the object
-			if (_valuesStart[property] === undefined) {
-				continue;
-			}
-
 			_valuesStart[property] = _object[property];
 
 			if ((_valuesStart[property] instanceof Array) === false) {
@@ -6475,11 +6479,6 @@ TWEEN.Tween = function (object) {
 
 		for (property in _valuesEnd) {
 
-			// Don't update properties that do not exist in the source object
-			if (_valuesStart[property] === undefined) {
-				continue;
-			}
-
 			var start = _valuesStart[property] || 0;
 			var end = _valuesEnd[property];
 
@@ -6491,12 +6490,7 @@ TWEEN.Tween = function (object) {
 
 				// Parses relative end values with start as base (e.g.: +10, -3)
 				if (typeof (end) === 'string') {
-
-					if (end.startsWith('+') || end.startsWith('-')) {
-						end = start + parseFloat(end, 10);
-					} else {
-						end = parseFloat(end, 10);
-					}
+					end = start + parseFloat(end, 10);
 				}
 
 				// Protect against non numeric properties.
@@ -7051,12 +7045,12 @@ TWEEN.Interpolation = {
 			return TWEEN;
 		});
 
-	} else if (typeof module !== 'undefined' && typeof exports === 'object') {
+	} else if (typeof exports === 'object') {
 
 		// Node.js
 		module.exports = TWEEN;
 
-	} else if (root !== undefined) {
+	} else {
 
 		// Global variable
 		root.TWEEN = TWEEN;
