@@ -2479,11 +2479,15 @@ module.exports.go = function(options) {
       .css('display', 'none');
 
     $container.append($div);
-    setTimeout(function() {
-      $div.fadeIn(fadeTime);
-    }, delay);
+    fadeInDivInDelay($div, delay, fadeTime);
   }
 };
+
+function fadeInDivInDelay($div, delay, fadeTime) {
+  setTimeout(function() {
+    $div.fadeIn(fadeTime);
+  }, delay);
+}
 
 module.exports.hide = function(fadeTime) {
   if (fadeTime) {
