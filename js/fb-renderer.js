@@ -26,7 +26,22 @@ module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo) {
   return $(html);
 };
 
-module.exports.renderedPost = function _renderedPost(post) {
+module.exports.renderedPost = function _renderedPost(post, options) {
+  var imageURL = post.picture;
+  var attemptHighResolution = options && options.attemptHighResolution;
+  if (attemptHighResolution) {
+    if (post.attachments && post.attachments.data) {
+      var attachmentData = post.attachments.data;
+      for (var i = 0; i < attachmentData.length; i++) {
+        var attachment = attachmentData[i];
+        if (attachment.media && attachment.media.image) {
+          imageURL = attachment.media.image.src;
+          break;
+        }
+      }
+    }
+  }
+
   var html = '<div class="fb-element fb-post"><div class="fb-post-wrapper">';
   html += '<div class="fb-post-content">';
   html += renderedPostHeader(post);
@@ -35,8 +50,8 @@ module.exports.renderedPost = function _renderedPost(post) {
 
   if (post.link && post.link.indexOf('facebook') === -1) {
     html += '<a href="' + post.link + '">';
-    if (post.picture) {
-      html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+    if (imageURL) {
+      html += '<img class="fb-post-picture" src="' + imageURL + '"/>';
     }
     html += '<div class="fb-link-body">';
     html += '<div class="fb-link">' + post.link + '</div>';
@@ -45,8 +60,8 @@ module.exports.renderedPost = function _renderedPost(post) {
     }
     html += '</div></a>'; // link body, then a tag
   }
-  else if (post.picture) {
-    html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+  else if (imageURL) {
+    html += '<img class="fb-post-picture" src="' + imageURL + '"/>';
     if (post.description) {
       html += '<div class="fb-post-description">' + post.description + '</div>';
     }

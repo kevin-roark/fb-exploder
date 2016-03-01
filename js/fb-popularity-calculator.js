@@ -2,6 +2,7 @@
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
 var color = require('./color');
+var phraseScatterer = require('./phrase-scatterer');
 var celebrities = require('./celebrities');
 
 var PiecesToShow = 3;
@@ -31,6 +32,10 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   populateBestContentWithPercentile(bestContent, function() {
     hasReceivedPercentile = true;
+  });
+
+  phraseScatterer.go({
+    $container: $container
   });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
@@ -80,9 +85,10 @@ module.exports.start = function _start(dump, finishedCallback) {
   setTimeout(function() {
     if (!hasEnteredSharingState) {
       $('.popularity-zone').fadeOut(3000);
+      phraseScatterer.hide(3000);
       setTimeout(finishedCallback, 3000);
     }
-  }, 20 * 1000);
+  }, 15 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -212,6 +218,7 @@ function enterSharingState(bestContent, finishedCallback) {
     $('.celebrity-head-tip').fadeOut(1000);
     $('#facebook-share-button').fadeOut(1000);
     $('#skip-share-button').fadeOut(1000);
+    phraseScatterer.hide(1000);
     $('.popularity-zone').fadeOut(3000);
 
     var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
@@ -234,10 +241,10 @@ function shareCanvasToFacebook(canvas, callback) {
     function shareToFacebookWithImageURL(imageURL) {
       var options = {
         method: 'feed',
-        link: 'www.lifeinreview.com',
+        link: 'www.lifeislife.xyz',
         picture: imageURL,
         caption: 'Check out my Life in Review Score! Please tell me yours?',
-        description: 'Life in Review scores you!'
+        description: 'Life in Review scores you! Thanks Carmichael!'
       };
       if (imageURL) {
         options.picture = imageURL;
@@ -355,7 +362,9 @@ function renderedBestPhotos(photos) {
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
 
   for (var i = 0; i < photos.length; i++) {
-    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>');
+    var photo = photos[i];
+    var image = photo.images && photo.images.length > 0 ? photo.images[0].source : photo.picture;
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + image + '"/></div>');
     $el.append($wrapper);
 
     $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
@@ -373,7 +382,7 @@ function renderedBestPosts(posts) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
     $el.append($wrapper);
 
-    var $post = fbRenderer.renderedPost(posts[i]);
+    var $post = fbRenderer.renderedPost(posts[i], {attemptHighResolution: true});
     $post.addClass('popularity-element');
     $post.css('position', 'relative');
     $wrapper.append($post);

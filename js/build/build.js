@@ -135,9 +135,9 @@ module.exports.randomBrightColor = function() {
 var kt = require('kutility');
 var fbRenderer = require('./fb-renderer');
 
-var DelayBeforePhotoWaterfall = 6666;
-var DelayBeforePostsWaterfall = 15666;
-var DelayBeforeDataWaterfall = 23666;
+var DelayBeforePhotoWaterfall = 9999;
+var DelayBeforePostsWaterfall = 18666;
+var DelayBeforeDataWaterfall = 27666;
 
 var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers;
 $(function() {
@@ -310,7 +310,7 @@ function handleAlbums(albums) {
   setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
     minWidth: 100,
     widthVariance: 350,
-    minDelay: 400,
+    minDelay: 200,
     delayVariance: 1000
   });
   setTimeout(function() {
@@ -335,18 +335,20 @@ function handleLikes(likes) {
 
   setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
   setTimeout(function() {
-    setupStaticDataStack(likes, fbRenderer.renderedLike);
+    setupStaticDataStack(likes, fbRenderer.renderedLike, {minDelay: 1000});
   }, 45 * 1000);
 }
 
 function handleEvents(events) {
   if (!events) { return; }
 
-  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
+  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1000});
   setTimeout(function() {
     setupStaticDataStack(events, fbRenderer.renderedEvent, {
       minWidth: 300,
-      widthVariance: 200
+      widthVariance: 200,
+      minDelay: 1000,
+      delayDecayRate: 0.9985
     });
   }, 45 * 1000);
 }
@@ -361,17 +363,29 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
+  var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 4 minutes
 
   var dataIndex = 0;
   var activeRenderedElements = [];
+  var stillStreaming = true;
+
+  setTimeout(function() {
+    stillStreaming = false;
+    widthVarianceGrowthRate = 1.002;
+    maxWidthVariance= window.innerWidth * 0.55
+  }, totalStreamTime);
 
   function doNextItem() {
-    var delay = Math.random() * delayVariance + minDelay;
-    setTimeout(doNextItem, delay);
+    if (stillStreaming) {
+      var delay = Math.random() * delayVariance + minDelay;
+      setTimeout(doNextItem, delay);
+    }
 
     if (!shouldUpdate) {
       return;
@@ -393,6 +407,9 @@ function setupDataStream(data, renderer, $layer, options) {
 
     activeRenderedElements.push($html);
     $layer.append($html);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 
   doNextItem();
@@ -420,10 +437,13 @@ function setupStaticDataStack(data, renderer, options) {
   }
 
   var minWidth = options.minWidth || 200;
+  var minDelay = options.minDelay || 100;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var elementLifespan = options.elementLifespan || 4000;
   var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
-  var delayDecayRate = options.delayDecayRate || 0.998; // exponential
+  var delayDecayRate = options.delayDecayRate || 0.997; // exponential
 
   var currentDelayBetweenElements = initialDelayBetweenElements;
 
@@ -446,7 +466,12 @@ function setupStaticDataStack(data, renderer, options) {
     }, elementLifespan + 400); // fade in delay
 
     setTimeout(stackData, currentDelayBetweenElements);
+
     currentDelayBetweenElements = Math.pow(currentDelayBetweenElements, delayDecayRate);
+    currentDelayBetweenElements = Math.max(currentDelayBetweenElements, minDelay);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 }
 
@@ -467,11 +492,12 @@ function removeFromArray(arr, el) {
   }
 }
 
-},{"./fb-renderer":5,"kutility":12}],4:[function(require,module,exports){
+},{"./fb-renderer":5,"kutility":13}],4:[function(require,module,exports){
 
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
 var color = require('./color');
+var phraseScatterer = require('./phrase-scatterer');
 var celebrities = require('./celebrities');
 
 var PiecesToShow = 3;
@@ -501,6 +527,10 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   populateBestContentWithPercentile(bestContent, function() {
     hasReceivedPercentile = true;
+  });
+
+  phraseScatterer.go({
+    $container: $container
   });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
@@ -550,9 +580,10 @@ module.exports.start = function _start(dump, finishedCallback) {
   setTimeout(function() {
     if (!hasEnteredSharingState) {
       $('.popularity-zone').fadeOut(3000);
+      phraseScatterer.hide(3000);
       setTimeout(finishedCallback, 3000);
     }
-  }, 20 * 1000);
+  }, 15 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -682,6 +713,7 @@ function enterSharingState(bestContent, finishedCallback) {
     $('.celebrity-head-tip').fadeOut(1000);
     $('#facebook-share-button').fadeOut(1000);
     $('#skip-share-button').fadeOut(1000);
+    phraseScatterer.hide(1000);
     $('.popularity-zone').fadeOut(3000);
 
     var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
@@ -704,10 +736,10 @@ function shareCanvasToFacebook(canvas, callback) {
     function shareToFacebookWithImageURL(imageURL) {
       var options = {
         method: 'feed',
-        link: 'www.lifeinreview.com',
+        link: 'www.lifeislife.xyz',
         picture: imageURL,
         caption: 'Check out my Life in Review Score! Please tell me yours?',
-        description: 'Life in Review scores you!'
+        description: 'Life in Review scores you! Thanks Carmichael!'
       };
       if (imageURL) {
         options.picture = imageURL;
@@ -825,7 +857,9 @@ function renderedBestPhotos(photos) {
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
 
   for (var i = 0; i < photos.length; i++) {
-    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>');
+    var photo = photos[i];
+    var image = photo.images && photo.images.length > 0 ? photo.images[0].source : photo.picture;
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + image + '"/></div>');
     $el.append($wrapper);
 
     $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
@@ -843,7 +877,7 @@ function renderedBestPosts(posts) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
     $el.append($wrapper);
 
-    var $post = fbRenderer.renderedPost(posts[i]);
+    var $post = fbRenderer.renderedPost(posts[i], {attemptHighResolution: true});
     $post.addClass('popularity-element');
     $post.css('position', 'relative');
     $wrapper.append($post);
@@ -1111,7 +1145,7 @@ function drawImageFromUrl(url, context, rect, callback) {
   img.src = url;
 }
 
-},{"./celebrities":1,"./color":2,"./fb-renderer":5,"./lib/multiline":8}],5:[function(require,module,exports){
+},{"./celebrities":1,"./color":2,"./fb-renderer":5,"./lib/multiline":8,"./phrase-scatterer":11}],5:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');
@@ -1140,7 +1174,22 @@ module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo) {
   return $(html);
 };
 
-module.exports.renderedPost = function _renderedPost(post) {
+module.exports.renderedPost = function _renderedPost(post, options) {
+  var imageURL = post.picture;
+  var attemptHighResolution = options && options.attemptHighResolution;
+  if (attemptHighResolution) {
+    if (post.attachments && post.attachments.data) {
+      var attachmentData = post.attachments.data;
+      for (var i = 0; i < attachmentData.length; i++) {
+        var attachment = attachmentData[i];
+        if (attachment.media && attachment.media.image) {
+          imageURL = attachment.media.image.src;
+          break;
+        }
+      }
+    }
+  }
+
   var html = '<div class="fb-element fb-post"><div class="fb-post-wrapper">';
   html += '<div class="fb-post-content">';
   html += renderedPostHeader(post);
@@ -1149,8 +1198,8 @@ module.exports.renderedPost = function _renderedPost(post) {
 
   if (post.link && post.link.indexOf('facebook') === -1) {
     html += '<a href="' + post.link + '">';
-    if (post.picture) {
-      html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+    if (imageURL) {
+      html += '<img class="fb-post-picture" src="' + imageURL + '"/>';
     }
     html += '<div class="fb-link-body">';
     html += '<div class="fb-link">' + post.link + '</div>';
@@ -1159,8 +1208,8 @@ module.exports.renderedPost = function _renderedPost(post) {
     }
     html += '</div></a>'; // link body, then a tag
   }
-  else if (post.picture) {
-    html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+  else if (imageURL) {
+    html += '<img class="fb-post-picture" src="' + imageURL + '"/>';
     if (post.description) {
       html += '<div class="fb-post-description">' + post.description + '</div>';
     }
@@ -1368,7 +1417,7 @@ function span(className, content) {
   return '<span class="' + className + '">' + content + '</span>';
 }
 
-},{"kutility":12,"moment":13}],6:[function(require,module,exports){
+},{"kutility":13,"moment":14}],6:[function(require,module,exports){
 
 var TEST_MODE = false;
 
@@ -1417,15 +1466,15 @@ module.exports.meDump = function(callback) {
     return field + '.limit(' + count + ')';
   }
 
-  var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
-  var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
-  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
+  var photosField = limit('photos') + '{width,height,name,picture,images,comments.summary(1),likes.summary(1)}';
+  var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name,images}}';
+  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1),attachments}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
   var demographicFields = 'age_range,email,name,cover,picture';
 
-  var numberOfCalls = TEST_MODE ? 1 : 3;
+  var numberOfCalls = TEST_MODE ? 1 : 4;
   if (TEST_MODE) {
     var combinedFields = [
       photosField,
@@ -1441,7 +1490,8 @@ module.exports.meDump = function(callback) {
   else {
     api('/me?fields=' + [postsField, friendsField].join(','), fbCallDidFinish);
     api('/me?fields=' + [eventsField, likesField, demographicFields].join(','), fbCallDidFinish);
-    api('/me?fields=' + [photosField, albumsField].join(','), fbCallDidFinish);
+    api('/me?fields=' + photosField, fbCallDidFinish);
+    api('/me?fields=' + albumsField, fbCallDidFinish);
   }
 
   var callsFinished = 0;
@@ -2301,7 +2351,7 @@ $(function() {
     $el: $('#loading-view'),
     baseText: 'Gathering and Crunching your Facebook data'
   });
-  var friendsSound = new buzz.sound('media/friends', {
+  var friendsSound = new buzz.sound('media/friends3', {
     formats: ['mp3'],
     webAudioApi: true
   });
@@ -2373,7 +2423,67 @@ $(function() {
 
 });
 
-},{"./fb":6,"./fb-gravity-streamer":3,"./fb-popularity-calculator":4,"./fb-renderer":5,"./lib/buzz":7,"./loading-view":9,"./shims":11,"tween.js":14}],11:[function(require,module,exports){
+},{"./fb":6,"./fb-gravity-streamer":3,"./fb-popularity-calculator":4,"./fb-renderer":5,"./lib/buzz":7,"./loading-view":9,"./shims":12,"tween.js":15}],11:[function(require,module,exports){
+
+var kt = require('kutility');
+var color = require('./color');
+
+var phrases = [
+  "You're so popular!",
+  "I like you... Do you like me?",
+  "We've shared so much together",
+  "Remembering memories with you... Unbeleivable",
+  "It feels good, to see you",
+  "Cherish what we have, what we've done",
+  "You look great today, and yesterday"
+];
+
+module.exports.go = function(options) {
+  if (!options) options = {};
+
+  var phraseCount = options.phraseCount || 50;
+  var $container = options.$container || $('body');
+  var minX = options.minX || -50;
+  var maxX = options.maxX || window.innerWidth - 50;
+  var minY = options.minY || 0;
+  var maxY = options.maxY || window.innerHeight - 20;
+  var minFontSize = options.minFontSize || 16;
+  var maxFontSize = options.maxFontSize || 72;
+  var fontFamily = options.fontFamily || 'sans-serif';
+
+  for (var i = 0; i < phraseCount; i++) {
+    var phrase = kt.choice(phrases);
+    var textColor = color.randomBrightColor();
+    var shadowColor = color.randomBrightColor();
+    var fontSize = kt.randInt(minFontSize, maxFontSize);
+    var x = kt.randInt(minX, maxX);
+    var y = kt.randInt(minY, maxY);
+    var rotation = kt.randInt(0, 360);
+    var fadeTime = kt.randInt(200, 5000);
+
+    var $div = $('<div class="scattered-phrase">')
+      .text(phrase)
+      .css('position', 'absolute').css('left', x + 'px').css('top', y + 'px')
+      .css('font-family', fontFamily).css('font-size', fontSize + 'px')
+      .css('color', textColor).css('text-shadow', '5px 5px 20px ' + shadowColor)
+      .css('transform', 'rotate(' + rotation + 'deg)')
+      .css('display', 'none');
+
+    $container.append($div);
+    $div.fadeIn(fadeTime);
+  }
+};
+
+module.exports.hide = function(fadeTime) {
+  if (fadeTime) {
+    $('.scattered-phrase').fadeOut(fadeTime);
+  }
+  else {
+    $('.scattered-phrase').remove();
+  }
+};
+
+},{"./color":2,"kutility":13}],12:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -2401,7 +2511,7 @@ $(function() {
         };
 }());
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -2975,7 +3085,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -6171,7 +6281,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js

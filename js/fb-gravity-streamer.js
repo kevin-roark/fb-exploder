@@ -2,9 +2,9 @@
 var kt = require('kutility');
 var fbRenderer = require('./fb-renderer');
 
-var DelayBeforePhotoWaterfall = 6666;
-var DelayBeforePostsWaterfall = 15666;
-var DelayBeforeDataWaterfall = 23666;
+var DelayBeforePhotoWaterfall = 9999;
+var DelayBeforePostsWaterfall = 18666;
+var DelayBeforeDataWaterfall = 27666;
 
 var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers;
 $(function() {
@@ -177,7 +177,7 @@ function handleAlbums(albums) {
   setupDataStream(albumPhotos, fbRenderer.renderedAlbumPhoto, $albumsLayer, {
     minWidth: 100,
     widthVariance: 350,
-    minDelay: 400,
+    minDelay: 200,
     delayVariance: 1000
   });
   setTimeout(function() {
@@ -202,18 +202,20 @@ function handleLikes(likes) {
 
   setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
   setTimeout(function() {
-    setupStaticDataStack(likes, fbRenderer.renderedLike);
+    setupStaticDataStack(likes, fbRenderer.renderedLike, {minDelay: 1000});
   }, 45 * 1000);
 }
 
 function handleEvents(events) {
   if (!events) { return; }
 
-  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200});
+  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1000});
   setTimeout(function() {
     setupStaticDataStack(events, fbRenderer.renderedEvent, {
       minWidth: 300,
-      widthVariance: 200
+      widthVariance: 200,
+      minDelay: 1000,
+      delayDecayRate: 0.9985
     });
   }, 45 * 1000);
 }
@@ -228,17 +230,29 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
+  var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 4 minutes
 
   var dataIndex = 0;
   var activeRenderedElements = [];
+  var stillStreaming = true;
+
+  setTimeout(function() {
+    stillStreaming = false;
+    widthVarianceGrowthRate = 1.002;
+    maxWidthVariance= window.innerWidth * 0.55
+  }, totalStreamTime);
 
   function doNextItem() {
-    var delay = Math.random() * delayVariance + minDelay;
-    setTimeout(doNextItem, delay);
+    if (stillStreaming) {
+      var delay = Math.random() * delayVariance + minDelay;
+      setTimeout(doNextItem, delay);
+    }
 
     if (!shouldUpdate) {
       return;
@@ -260,6 +274,9 @@ function setupDataStream(data, renderer, $layer, options) {
 
     activeRenderedElements.push($html);
     $layer.append($html);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 
   doNextItem();
@@ -287,10 +304,13 @@ function setupStaticDataStack(data, renderer, options) {
   }
 
   var minWidth = options.minWidth || 200;
+  var minDelay = options.minDelay || 100;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var elementLifespan = options.elementLifespan || 4000;
   var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
-  var delayDecayRate = options.delayDecayRate || 0.998; // exponential
+  var delayDecayRate = options.delayDecayRate || 0.997; // exponential
 
   var currentDelayBetweenElements = initialDelayBetweenElements;
 
@@ -313,7 +333,12 @@ function setupStaticDataStack(data, renderer, options) {
     }, elementLifespan + 400); // fade in delay
 
     setTimeout(stackData, currentDelayBetweenElements);
+
     currentDelayBetweenElements = Math.pow(currentDelayBetweenElements, delayDecayRate);
+    currentDelayBetweenElements = Math.max(currentDelayBetweenElements, minDelay);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 }
 
