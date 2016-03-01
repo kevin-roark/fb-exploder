@@ -230,6 +230,8 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
   var minDelay = options.minDelay || 1000;
@@ -270,6 +272,9 @@ function setupDataStream(data, renderer, $layer, options) {
 
     activeRenderedElements.push($html);
     $layer.append($html);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 
   doNextItem();
@@ -299,6 +304,8 @@ function setupStaticDataStack(data, renderer, options) {
   var minWidth = options.minWidth || 200;
   var minDelay = options.minDelay || 100;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var elementLifespan = options.elementLifespan || 4000;
   var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
   var delayDecayRate = options.delayDecayRate || 0.997; // exponential
@@ -324,8 +331,12 @@ function setupStaticDataStack(data, renderer, options) {
     }, elementLifespan + 400); // fade in delay
 
     setTimeout(stackData, currentDelayBetweenElements);
+
     currentDelayBetweenElements = Math.pow(currentDelayBetweenElements, delayDecayRate);
     currentDelayBetweenElements = Math.max(currentDelayBetweenElements, minDelay);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 }
 
