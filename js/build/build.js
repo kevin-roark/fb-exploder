@@ -490,11 +490,12 @@ function removeFromArray(arr, el) {
   }
 }
 
-},{"./fb-renderer":5,"kutility":12}],4:[function(require,module,exports){
+},{"./fb-renderer":5,"kutility":13}],4:[function(require,module,exports){
 
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
 var color = require('./color');
+var phraseScatterer = require('./phrase-scatterer');
 var celebrities = require('./celebrities');
 
 var PiecesToShow = 3;
@@ -524,6 +525,10 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   populateBestContentWithPercentile(bestContent, function() {
     hasReceivedPercentile = true;
+  });
+
+  phraseScatterer.go({
+    $container: $container
   });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
@@ -573,6 +578,7 @@ module.exports.start = function _start(dump, finishedCallback) {
   setTimeout(function() {
     if (!hasEnteredSharingState) {
       $('.popularity-zone').fadeOut(3000);
+      phraseScatterer.hide(3000);
       setTimeout(finishedCallback, 3000);
     }
   }, 15 * 1000);
@@ -705,6 +711,7 @@ function enterSharingState(bestContent, finishedCallback) {
     $('.celebrity-head-tip').fadeOut(1000);
     $('#facebook-share-button').fadeOut(1000);
     $('#skip-share-button').fadeOut(1000);
+    phraseScatterer.hide(1000);
     $('.popularity-zone').fadeOut(3000);
 
     var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
@@ -1136,7 +1143,7 @@ function drawImageFromUrl(url, context, rect, callback) {
   img.src = url;
 }
 
-},{"./celebrities":1,"./color":2,"./fb-renderer":5,"./lib/multiline":8}],5:[function(require,module,exports){
+},{"./celebrities":1,"./color":2,"./fb-renderer":5,"./lib/multiline":8,"./phrase-scatterer":11}],5:[function(require,module,exports){
 
 var moment = require('moment');
 var kt = require('kutility');
@@ -1408,7 +1415,7 @@ function span(className, content) {
   return '<span class="' + className + '">' + content + '</span>';
 }
 
-},{"kutility":12,"moment":13}],6:[function(require,module,exports){
+},{"kutility":13,"moment":14}],6:[function(require,module,exports){
 
 var TEST_MODE = false;
 
@@ -2414,7 +2421,67 @@ $(function() {
 
 });
 
-},{"./fb":6,"./fb-gravity-streamer":3,"./fb-popularity-calculator":4,"./fb-renderer":5,"./lib/buzz":7,"./loading-view":9,"./shims":11,"tween.js":14}],11:[function(require,module,exports){
+},{"./fb":6,"./fb-gravity-streamer":3,"./fb-popularity-calculator":4,"./fb-renderer":5,"./lib/buzz":7,"./loading-view":9,"./shims":12,"tween.js":15}],11:[function(require,module,exports){
+
+var kt = require('kutility');
+var color = require('./color');
+
+var phrases = [
+  "You're so popular!",
+  "I like you... Do you like me?",
+  "We've shared so much together",
+  "Remembering memories with you... Unbeleivable",
+  "It feels good, to see you",
+  "Cherish what we have, what we've done",
+  "You look great today, and yesterday"
+];
+
+module.exports.go = function(options) {
+  if (!options) options = {};
+
+  var phraseCount = options.phraseCount || 50;
+  var $container = options.$container || $('body');
+  var minX = options.minX || -50;
+  var maxX = options.maxX || window.innerWidth - 50;
+  var minY = options.minY || 0;
+  var maxY = options.maxY || window.innerHeight - 20;
+  var minFontSize = options.minFontSize || 16;
+  var maxFontSize = options.maxFontSize || 72;
+  var fontFamily = options.fontFamily || 'sans-serif';
+
+  for (var i = 0; i < phraseCount; i++) {
+    var phrase = kt.choice(phrases);
+    var textColor = color.randomBrightColor();
+    var shadowColor = color.randomBrightColor();
+    var fontSize = kt.randInt(minFontSize, maxFontSize);
+    var x = kt.randInt(minX, maxX);
+    var y = kt.randInt(minY, maxY);
+    var rotation = kt.randInt(0, 360);
+    var fadeTime = kt.randInt(200, 5000);
+
+    var $div = $('<div class="scattered-phrase">')
+      .text(phrase)
+      .css('position', 'absolute').css('left', x + 'px').css('top', y + 'px')
+      .css('font-family', fontFamily).css('font-size', fontSize + 'px')
+      .css('color', textColor).css('text-shadow', '5px 5px 20px ' + shadowColor)
+      .css('transform', 'rotate(' + rotation + 'deg)')
+      .css('display', 'none');
+
+    $container.append($div);
+    $div.fadeIn(fadeTime);
+  }
+};
+
+module.exports.hide = function(fadeTime) {
+  if (fadeTime) {
+    $('.scattered-phrase').fadeOut(fadeTime);
+  }
+  else {
+    $('.scattered-phrase').remove();
+  }
+};
+
+},{"./color":2,"kutility":13}],12:[function(require,module,exports){
 
 // request animation frame shim
 (function() {
@@ -2442,7 +2509,7 @@ $(function() {
         };
 }());
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 /* export something */
 module.exports = new Kutility();
@@ -3016,7 +3083,7 @@ Kutility.prototype.blur = function(el, x) {
   this.setFilter(el, cf + f);
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -6212,7 +6279,7 @@ Kutility.prototype.blur = function(el, x) {
     return _moment;
 
 }));
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js

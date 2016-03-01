@@ -2,6 +2,7 @@
 var fbRenderer = require('./fb-renderer');
 var multiline = require('./lib/multiline');
 var color = require('./color');
+var phraseScatterer = require('./phrase-scatterer');
 var celebrities = require('./celebrities');
 
 var PiecesToShow = 3;
@@ -31,6 +32,10 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   populateBestContentWithPercentile(bestContent, function() {
     hasReceivedPercentile = true;
+  });
+
+  phraseScatterer.go({
+    $container: $container
   });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
@@ -80,6 +85,7 @@ module.exports.start = function _start(dump, finishedCallback) {
   setTimeout(function() {
     if (!hasEnteredSharingState) {
       $('.popularity-zone').fadeOut(3000);
+      phraseScatterer.hide(3000);
       setTimeout(finishedCallback, 3000);
     }
   }, 15 * 1000);
@@ -212,6 +218,7 @@ function enterSharingState(bestContent, finishedCallback) {
     $('.celebrity-head-tip').fadeOut(1000);
     $('#facebook-share-button').fadeOut(1000);
     $('#skip-share-button').fadeOut(1000);
+    phraseScatterer.hide(1000);
     $('.popularity-zone').fadeOut(3000);
 
     var $thanks = $('<div class="dreamy-message">').text('Thanks for Using!').css('display', 'none');
