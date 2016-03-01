@@ -363,6 +363,8 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
   var minDelay = options.minDelay || 1000;
@@ -403,6 +405,9 @@ function setupDataStream(data, renderer, $layer, options) {
 
     activeRenderedElements.push($html);
     $layer.append($html);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 
   doNextItem();
@@ -432,6 +437,8 @@ function setupStaticDataStack(data, renderer, options) {
   var minWidth = options.minWidth || 200;
   var minDelay = options.minDelay || 100;
   var widthVariance = options.widthVariance || 150;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var elementLifespan = options.elementLifespan || 4000;
   var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
   var delayDecayRate = options.delayDecayRate || 0.997; // exponential
@@ -457,8 +464,12 @@ function setupStaticDataStack(data, renderer, options) {
     }, elementLifespan + 400); // fade in delay
 
     setTimeout(stackData, currentDelayBetweenElements);
+
     currentDelayBetweenElements = Math.pow(currentDelayBetweenElements, delayDecayRate);
     currentDelayBetweenElements = Math.max(currentDelayBetweenElements, minDelay);
+
+    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    widthVariance = Math.min(maxWidthVariance, widthVariance);
   }
 }
 
@@ -837,7 +848,9 @@ function renderedBestPhotos(photos) {
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
 
   for (var i = 0; i < photos.length; i++) {
-    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>');
+    var photo = photos[i];
+    var image = photo.images && photo.images.length > 0 ? photo.images[0].source : photo.picture;
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + image + '"/></div>');
     $el.append($wrapper);
 
     $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
@@ -855,7 +868,7 @@ function renderedBestPosts(posts) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
     $el.append($wrapper);
 
-    var $post = fbRenderer.renderedPost(posts[i]);
+    var $post = fbRenderer.renderedPost(posts[i], {attemptHighResolution: true});
     $post.addClass('popularity-element');
     $post.css('position', 'relative');
     $wrapper.append($post);
@@ -1152,7 +1165,22 @@ module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo) {
   return $(html);
 };
 
-module.exports.renderedPost = function _renderedPost(post) {
+module.exports.renderedPost = function _renderedPost(post, options) {
+  var imageURL = post.picture;
+  var attemptHighResolution = options && options.attemptHighResolution;
+  if (attemptHighResolution) {
+    if (post.attachments && post.attachments.data) {
+      var attachmentData = post.attachments.data;
+      for (var i = 0; i < attachmentData.length; i++) {
+        var attachment = attachmentData[i];
+        if (attachment.media && attachment.media.image) {
+          imageURL = attachment.media.image.src;
+          break;
+        }
+      }
+    }
+  }
+
   var html = '<div class="fb-element fb-post"><div class="fb-post-wrapper">';
   html += '<div class="fb-post-content">';
   html += renderedPostHeader(post);
@@ -1161,8 +1189,8 @@ module.exports.renderedPost = function _renderedPost(post) {
 
   if (post.link && post.link.indexOf('facebook') === -1) {
     html += '<a href="' + post.link + '">';
-    if (post.picture) {
-      html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+    if (imageURL) {
+      html += '<img class="fb-post-picture" src="' + imageURL + '"/>';
     }
     html += '<div class="fb-link-body">';
     html += '<div class="fb-link">' + post.link + '</div>';
@@ -1171,8 +1199,8 @@ module.exports.renderedPost = function _renderedPost(post) {
     }
     html += '</div></a>'; // link body, then a tag
   }
-  else if (post.picture) {
-    html += '<img class="fb-post-picture" src="' + post.picture + '"/>';
+  else if (imageURL) {
+    html += '<img class="fb-post-picture" src="' + imageURL + '"/>';
     if (post.description) {
       html += '<div class="fb-post-description">' + post.description + '</div>';
     }
@@ -1429,15 +1457,15 @@ module.exports.meDump = function(callback) {
     return field + '.limit(' + count + ')';
   }
 
-  var photosField = limit('photos') + '{width,height,name,picture,comments.summary(1),likes.summary(1)}';
-  var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name}}';
-  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1)}';
+  var photosField = limit('photos') + '{width,height,name,picture,images,comments.summary(1),likes.summary(1)}';
+  var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name,images}}';
+  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1),attachments}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
   var demographicFields = 'age_range,email,name,cover,picture';
 
-  var numberOfCalls = TEST_MODE ? 1 : 3;
+  var numberOfCalls = TEST_MODE ? 1 : 4;
   if (TEST_MODE) {
     var combinedFields = [
       photosField,
@@ -1453,7 +1481,8 @@ module.exports.meDump = function(callback) {
   else {
     api('/me?fields=' + [postsField, friendsField].join(','), fbCallDidFinish);
     api('/me?fields=' + [eventsField, likesField, demographicFields].join(','), fbCallDidFinish);
-    api('/me?fields=' + [photosField, albumsField].join(','), fbCallDidFinish);
+    api('/me?fields=' + photosField, fbCallDidFinish);
+    api('/me?fields=' + albumsField, fbCallDidFinish);
   }
 
   var callsFinished = 0;

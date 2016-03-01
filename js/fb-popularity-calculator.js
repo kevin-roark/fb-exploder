@@ -355,7 +355,9 @@ function renderedBestPhotos(photos) {
   $el.append($('<div class="popularity-section-header">Your Best And Most Popular Photos</div>'));
 
   for (var i = 0; i < photos.length; i++) {
-    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + photos[i].picture + '"/></div>');
+    var photo = photos[i];
+    var image = photo.images && photo.images.length > 0 ? photo.images[0].source : photo.picture;
+    var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + image + '"/></div>');
     $el.append($wrapper);
 
     $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
@@ -373,7 +375,7 @@ function renderedBestPosts(posts) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"></div>');
     $el.append($wrapper);
 
-    var $post = fbRenderer.renderedPost(posts[i]);
+    var $post = fbRenderer.renderedPost(posts[i], {attemptHighResolution: true});
     $post.addClass('popularity-element');
     $post.css('position', 'relative');
     $wrapper.append($post);
