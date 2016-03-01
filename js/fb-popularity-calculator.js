@@ -241,10 +241,10 @@ function shareCanvasToFacebook(canvas, callback) {
     function shareToFacebookWithImageURL(imageURL) {
       var options = {
         method: 'feed',
-        link: 'www.lifeinreview.com',
+        link: 'www.lifeislife.xyz',
         picture: imageURL,
         caption: 'Check out my Life in Review Score! Please tell me yours?',
-        description: 'Life in Review scores you!'
+        description: 'Life in Review scores you! Thanks Carmichael!'
       };
       if (imageURL) {
         options.picture = imageURL;
