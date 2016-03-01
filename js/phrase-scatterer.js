@@ -9,7 +9,14 @@ var phrases = [
   "Remembering memories with you... Unbeleivable",
   "It feels good, to see you",
   "Cherish what we have, what we've done",
-  "You look great today, and yesterday"
+  "You look great today, and yesterday",
+  "Facebook is a Gift",
+  "I wish we could all be friends",
+  "WOW",
+  "Internet artists have found one weird trick to increase your popularity! Zuckerberg hates them.",
+  "Can you see me in my oculus rift?",
+  "Share, Like, Subsrcibe, 5 Stars",
+  "Today is a good day for you",
 ];
 
 module.exports.go = function(options) {
