@@ -265,6 +265,13 @@ a {
   text-shadow: 3px 3px 4px rgb(135, 88, 203);
 }
 
+.collage-score-zone {
+  display: none;
+  position: fixed; bottom: 12px; right: 12px; z-index: 1;
+  color: rgb(88, 144, 255); text-shadow: 3px 3px 3px rgba(0, 26, 255, 0.15);
+  font-family: 'Helvetica', sans-serif; font-size: 15px;
+}
+
 /*************************************************
  * Facebook Recreation
  *************************************************/
