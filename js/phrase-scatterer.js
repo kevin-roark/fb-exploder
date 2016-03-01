@@ -17,6 +17,7 @@ module.exports.go = function(options) {
 
   var phraseCount = options.phraseCount || 50;
   var $container = options.$container || $('body');
+  var delay = options.delay || 0;
   var minX = options.minX || -50;
   var maxX = options.maxX || window.innerWidth - 50;
   var minY = options.minY || 0;
@@ -44,7 +45,9 @@ module.exports.go = function(options) {
       .css('display', 'none');
 
     $container.append($div);
-    $div.fadeIn(fadeTime);
+    setTimeout(function() {
+      $div.fadeIn(fadeTime);
+    }, delay);
   }
 };
 

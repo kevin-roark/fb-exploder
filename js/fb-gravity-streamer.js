@@ -1,12 +1,13 @@
 
 var kt = require('kutility');
 var fbRenderer = require('./fb-renderer');
+var ScoreKeeper = require('./scorekeeper');
 
 var DelayBeforePhotoWaterfall = 9999;
 var DelayBeforePostsWaterfall = 18666;
 var DelayBeforeDataWaterfall = 27666;
 
-var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers;
+var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers, scorekeeper;
 $(function() {
   $container = $('#content-container');
 
@@ -19,6 +20,8 @@ $(function() {
   $eventsLayer = makeLayer('events-layer');
   $staticLayer = makeLayer('static-layer');
   orderedLayers = [$photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer];
+
+  scorekeeper = new ScoreKeeper();
 });
 
 var updateFunctions = [];
@@ -258,6 +261,8 @@ function setupDataStream(data, renderer, $layer, options) {
       return;
     }
 
+    scorekeeper.addScore(1);
+
     if (dataIndex >= data.length) {
       dataIndex = 0;
     }
@@ -339,6 +344,8 @@ function setupStaticDataStack(data, renderer, options) {
 
     widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
     widthVariance = Math.min(maxWidthVariance, widthVariance);
+
+    scorekeeper.addScore(1);
   }
 }
 

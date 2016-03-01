@@ -35,7 +35,8 @@ module.exports.start = function _start(dump, finishedCallback) {
   });
 
   phraseScatterer.go({
-    $container: $container
+    $container: $container,
+    delay: 5000
   });
 
   var $popularityZone = $('<div class="popularity-zone"></div>');
