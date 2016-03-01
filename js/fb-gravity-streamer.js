@@ -230,13 +230,13 @@ function setupDataStream(data, renderer, $layer, options) {
 
   var minWidth = options.minWidth || 200;
   var widthVariance = options.widthVariance || 150;
-  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
   var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var minSpeed = options.minSpeed || 1;
   var maxSpeed = options.maxSpeed || 10;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
-  var totalStreamTime = options.totalStreamTime || 4 * 60000; // 4 minutes
+  var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 4 minutes
 
   var dataIndex = 0;
   var activeRenderedElements = [];
@@ -244,6 +244,8 @@ function setupDataStream(data, renderer, $layer, options) {
 
   setTimeout(function() {
     stillStreaming = false;
+    widthVarianceGrowthRate = 1.002;
+    maxWidthVariance= window.innerWidth * 0.55
   }, totalStreamTime);
 
   function doNextItem() {
