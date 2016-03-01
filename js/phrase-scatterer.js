@@ -9,21 +9,28 @@ var phrases = [
   "Remembering memories with you... Unbeleivable",
   "It feels good, to see you",
   "Cherish what we have, what we've done",
-  "You look great today, and yesterday"
+  "You look great today, and yesterday",
+  "Facebook is a Gift",
+  "I wish we could all be friends",
+  "WOW",
+  "Internet artists have found one weird trick to increase your popularity! Zuckerberg hates them.",
+  "Can you see me in my oculus rift?",
+  "Share, Like, Subsrcibe, 5 Stars",
+  "Today is a good day for you",
 ];
 
 module.exports.go = function(options) {
   if (!options) options = {};
 
-  var phraseCount = options.phraseCount || 50;
+  var phraseCount = options.phraseCount || 20;
   var $container = options.$container || $('body');
-  var delay = options.delay || 0;
+  var delay = options.delay || 1000;
   var minX = options.minX || -50;
   var maxX = options.maxX || window.innerWidth - 50;
   var minY = options.minY || 0;
   var maxY = options.maxY || window.innerHeight - 20;
   var minFontSize = options.minFontSize || 16;
-  var maxFontSize = options.maxFontSize || 72;
+  var maxFontSize = options.maxFontSize || 52;
   var fontFamily = options.fontFamily || 'sans-serif';
 
   for (var i = 0; i < phraseCount; i++) {
@@ -33,8 +40,8 @@ module.exports.go = function(options) {
     var fontSize = kt.randInt(minFontSize, maxFontSize);
     var x = kt.randInt(minX, maxX);
     var y = kt.randInt(minY, maxY);
-    var rotation = kt.randInt(0, 360);
-    var fadeTime = kt.randInt(200, 5000);
+    var rotation = kt.randInt(0, 0);
+    var fadeTime = kt.randInt(1000, 10000);
 
     var $div = $('<div class="scattered-phrase">')
       .text(phrase)
