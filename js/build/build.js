@@ -453,14 +453,13 @@ function setupStaticDataStack(data, renderer, options) {
   var delayDecayRate = options.delayDecayRate || 0.997; // exponential
   var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 3.5 minutes
   var fadeTime = options.fadeTime || 400;
-  var fadeDecayRate =options.fadeDecayRate ||  0.9995;
+  var fadeDecayRate = options.fadeDecayRate || 0.9995;
   var minFadeTime = options.minFadeTime || 100;
   var growWidth = options.growWidth || false;
   var currentDelayBetweenElements = initialDelayBetweenElements;
 
   setTimeout(function() {
     widthVarianceGrowthRate = 1.0002;
-    console.log ("changed growth rate")
     maxWidthVariance= window.innerWidth * 0.55;
     growWidth = true;
   }, totalStreamTime);
@@ -487,10 +486,9 @@ function setupStaticDataStack(data, renderer, options) {
 
     // Scaled method for fade decrease
     fadeTime = currentDelayBetweenElements / 10;
-    if (fadeTime < minFadeTime){
+    if (fadeTime < minFadeTime) {
       fadeTime = minFadeTime;
     }
-    console.log("fade Time: " + fadeTime);
 
     setTimeout(function() {
       $html.fadeOut(fadeTime);
@@ -502,13 +500,11 @@ function setupStaticDataStack(data, renderer, options) {
     currentDelayBetweenElements = Math.max(currentDelayBetweenElements, minDelay);
     // widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate); This is very hard to control
 
-    if (growWidth){
+    if (growWidth) {
       widthVariance = widthVariance + 0.3;
     }
 
     widthVariance = Math.min(maxWidthVariance, widthVariance);
-    console.log("Delay:"  + currentDelayBetweenElements);
-    console.log("Variance:" + widthVariance);
     scorekeeper.addScore(1);
   }
 }
@@ -7261,12 +7257,6 @@ TWEEN.Tween = function (object) {
 
 			}
 
-			// If `to()` specifies a property that doesn't exist in the source object,
-			// we should not set that property in the object
-			if (_valuesStart[property] === undefined) {
-				continue;
-			}
-
 			_valuesStart[property] = _object[property];
 
 			if ((_valuesStart[property] instanceof Array) === false) {
@@ -7405,11 +7395,6 @@ TWEEN.Tween = function (object) {
 
 		for (property in _valuesEnd) {
 
-			// Don't update properties that do not exist in the source object
-			if (_valuesStart[property] === undefined) {
-				continue;
-			}
-
 			var start = _valuesStart[property] || 0;
 			var end = _valuesEnd[property];
 
@@ -7421,12 +7406,7 @@ TWEEN.Tween = function (object) {
 
 				// Parses relative end values with start as base (e.g.: +10, -3)
 				if (typeof (end) === 'string') {
-
-					if (end.startsWith('+') || end.startsWith('-')) {
-						end = start + parseFloat(end, 10);
-					} else {
-						end = parseFloat(end, 10);
-					}
+					end = start + parseFloat(end, 10);
 				}
 
 				// Protect against non numeric properties.
@@ -7981,12 +7961,12 @@ TWEEN.Interpolation = {
 			return TWEEN;
 		});
 
-	} else if (typeof module !== 'undefined' && typeof exports === 'object') {
+	} else if (typeof exports === 'object') {
 
 		// Node.js
 		module.exports = TWEEN;
 
-	} else if (root !== undefined) {
+	} else {
 
 		// Global variable
 		root.TWEEN = TWEEN;
