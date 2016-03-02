@@ -1514,7 +1514,7 @@ module.exports.meDump = function(callback) {
 
   var photosField = limit('photos', 400) + '{width,height,name,picture,images,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name,images}}';
-  var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1),attachments}';
+  var postsField = limit('posts', 360) + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1),attachments}';
   var friendsField = limit('friends');
   var eventsField = limit('events') + '{description,cover,name,owner,start_time,attending_count,declined_count,maybe_count,noreply_count,place}';
   var likesField = limit('likes') + '{about,category,cover,description,name,likes}';
@@ -1534,9 +1534,36 @@ module.exports.meDump = function(callback) {
     api('/me?fields=' + combinedFields, fbCallDidFinish);
   }
   else {
-    api('/me?fields=' + [postsField, friendsField].join(','), fbCallDidFinish);
     api('/me?fields=' + [eventsField, likesField, demographicFields].join(','), fbCallDidFinish);
     api('/me?fields=' + albumsField, fbCallDidFinish);
+
+    api('/me?fields=' + [postsField, friendsField].join(','), function(response) {
+      console.log(response);
+      if (!response.posts || !response.posts.data || !response.posts.paging || !response.posts.paging.next) {
+        fbCallDidFinish(response);
+        return;
+      }
+
+      var pagesAddedCount = 0;
+      var desiredPagesToAdd = 1;
+
+      function getNextPage(nextPageURL) {
+        pagesAddedCount += 1;
+
+        $.get(nextPageURL, function(pageResponse) {
+          Array.prototype.push.apply(response.posts.data, pageResponse.data);
+
+          if (pagesAddedCount < desiredPagesToAdd && pageResponse.paging.next) {
+            getNextPage(pageResponse.paging.next);
+          }
+          else {
+            fbCallDidFinish(response);
+          }
+        });
+      }
+
+      getNextPage(response.posts.paging.next);
+    });
 
     api('/me?fields=' + photosField, function(response) {
       if (!response.photos || !response.photos.data || !response.photos.paging || !response.photos.paging.next) {
