@@ -64,10 +64,22 @@ $(function() {
 
     loadingView.start();
 
-    fb.meDump(function(response) {
-      console.log(response);
+    var $loadingWaitText = $('#loading-wait-text');
+    $loadingWaitText.fadeIn();
 
+    var waitTextInterval = setInterval(function() {
+      var top = parseFloat($loadingWaitText.css('top')) + (Math.random() - 0.5) * 2;
+      $loadingWaitText.css('top', top + 'px');
+
+      var left = parseFloat($loadingWaitText.css('left')) + (Math.random() - 0.5) * 2;
+      $loadingWaitText.css('left', left + 'px');
+    }, 50);
+
+    fb.meDump(function(response) {
       loadingView.stop();
+      $('#loading-wait-text').fadeOut();
+      clearInterval(waitTextInterval);
+
       fbRenderer.init(response);
       currentState = POPULARITY_STATE;
 

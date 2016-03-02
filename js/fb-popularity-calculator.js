@@ -242,7 +242,6 @@ function enterSharingState(bestContent, finishedCallback) {
 function shareCanvasToFacebook(canvas, callback) {
   // share image first
   uploadCanvasToCloudinary(canvas, function(error, imageURL) {
-    console.log(imageURL);
     shareToFacebookWithImageURL(imageURL);
 
     function shareToFacebookWithImageURL(imageURL) {
