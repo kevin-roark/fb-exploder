@@ -6,6 +6,9 @@ var ScoreKeeper = require('./scorekeeper');
 var DelayBeforePhotoWaterfall = 9999;
 var DelayBeforePostsWaterfall = 35666;
 var DelayBeforeDataWaterfall = 53666;
+var DelayBeforeStaticStack = 60000;
+
+
 
 var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers, scorekeeper;
 $(function() {
@@ -32,7 +35,6 @@ var shouldUpdate = true;
 module.exports.start = function _start(dump) {
   if (dump.albums) {
     handleAlbums(dump.albums.data);
-  }
 
   setTimeout(function() {
     if (dump.photos) {
@@ -188,7 +190,7 @@ function handleAlbums(albums) {
       minWidth: 100,
       widthVariance: 350
     });
-  }, 45 * 1000);
+  }, DelayBeforeStaticStack);
 }
 
 function handlePosts(posts) {
@@ -197,7 +199,7 @@ function handlePosts(posts) {
   setupDataStream(posts, fbRenderer.renderedPost, $postsLayer);
   setTimeout(function() {
     setupStaticDataStack(posts, fbRenderer.renderedPost);
-  }, 45 * 1000);
+  }, DelayBeforeStaticStack);
 }
 
 function handleLikes(likes) {
@@ -206,7 +208,7 @@ function handleLikes(likes) {
   setupDataStream(likes, fbRenderer.renderedLike, $likesLayer);
   setTimeout(function() {
     setupStaticDataStack(likes, fbRenderer.renderedLike, {minDelay: 1000});
-  }, 45 * 1000);
+  }, DelayBeforeStaticStack);
 }
 
 function handleEvents(events) {
@@ -220,7 +222,7 @@ function handleEvents(events) {
       minDelay: 1000,
       delayDecayRate: 0.9985
     });
-  }, 45 * 1000);
+  }, DelayBeforeStaticStack);
 }
 
 function setupDataStream(data, renderer, $layer, options) {
@@ -247,7 +249,7 @@ function setupDataStream(data, renderer, $layer, options) {
 
   setTimeout(function() {
     stillStreaming = false;
-    widthVarianceGrowthRate = 1.006;
+    widthVarianceGrowthRate = 1.0003;
     maxWidthVariance= window.innerWidth * 0.55;
   }, totalStreamTime);
 
@@ -312,12 +314,22 @@ function setupStaticDataStack(data, renderer, options) {
   var minDelay = options.minDelay || 150;
   var widthVariance = options.widthVariance || 200;
   var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
-  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.55;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
   var elementLifespan = options.elementLifespan || 4000;
   var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
   var delayDecayRate = options.delayDecayRate || 0.997; // exponential
-
+  var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 3.5 minutes
+  var fadeTime = options.fadeTime || 400;
+  var fadeDecayRate = options.fadeDecayRate || 0.9995;
+  var minFadeTime = options.minFadeTime || 100;
+  var growWidth = options.growWidth || false;
   var currentDelayBetweenElements = initialDelayBetweenElements;
+
+  setTimeout(function() {
+    widthVarianceGrowthRate = 1.0002;
+    maxWidthVariance= window.innerWidth * 0.55;
+    growWidth = true;
+  }, totalStreamTime);
 
   stackData();
 
@@ -331,20 +343,35 @@ function setupStaticDataStack(data, renderer, options) {
     $html.css('top', (Math.random() * (window.innerHeight - width * 1.25)) + 'px');
 
     $staticLayer.append($html);
-    $html.fadeIn();
+    $html.fadeIn(fadeTime);
+
+    // Exponential method for fade decrease
+    // fadeTime = Math.pow(fadeTime, fadeDecayRate);
+    // if (fadeTime < minFadeTime){
+    //   fadeTime = minFadeTime;
+    // }
+
+    // Scaled method for fade decrease
+    fadeTime = currentDelayBetweenElements / 10;
+    if (fadeTime < minFadeTime) {
+      fadeTime = minFadeTime;
+    }
 
     setTimeout(function() {
-      $html.fadeOut();
+      $html.fadeOut(fadeTime);
     }, elementLifespan + 400); // fade in delay
 
     setTimeout(stackData, currentDelayBetweenElements);
 
     currentDelayBetweenElements = Math.pow(currentDelayBetweenElements, delayDecayRate);
     currentDelayBetweenElements = Math.max(currentDelayBetweenElements, minDelay);
+    // widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate); This is very hard to control
 
-    widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate);
+    if (growWidth) {
+      widthVariance = widthVariance + 0.3;
+    }
+
     widthVariance = Math.min(maxWidthVariance, widthVariance);
-
     scorekeeper.addScore(1);
   }
 }
@@ -353,7 +380,7 @@ function setupStaticDataStack(data, renderer, options) {
 
 function updateYTranslation($html, speed) {
   if (speed) {
-    $html._yOffset = Math.round($html._yOffset + speed);
+    $html._yOffset = $html._yOffset + speed;
   }
 
   $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
@@ -364,4 +391,5 @@ function removeFromArray(arr, el) {
   if (idx > -1) {
     arr.splice(idx, 1);
   }
+}
 }

@@ -16,7 +16,7 @@ module.exports.renderedPhoto = function _renderedPhoto(photo) {
 module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo, options) {
   if (!options) options = {};
   var attemptHighResolution = options.attemptHighResolution !== undefined ? options.attemptHighResolution : true;
-  var imageURL = (attemptHighResolution && photo.images && photo.images.length > 0) ? photo.images[0].source : photo.picture;
+  var imageURL = (attemptHighResolution && photo.images && photo.images.length > 0) ? (photo.images.length > 1 ? photo.images[photo.images.length - 1].source : photo.images[0].source) : photo.picture;
 
   var html = '<div class="fb-element fb-photo">';
 
