@@ -41,12 +41,13 @@ var api = module.exports.api = function(endpoint, callback) {
 };
 
 module.exports.meDump = function(callback) {
-  function limit(field) {
-    var count = TEST_MODE ? 50 : 666;
+  function limit(field, count) {
+    if (!count) count = TEST_MODE ? 50 : 666;
+
     return field + '.limit(' + count + ')';
   }
 
-  var photosField = limit('photos') + '{width,height,name,picture,images,comments.summary(1),likes.summary(1)}';
+  var photosField = limit('photos', 400) + '{width,height,name,picture,images,comments.summary(1),likes.summary(1)}';
   var albumsField = limit('albums') + '{count,created_time,description,location,name,' + limit('photos') + '{picture,name,images}}';
   var postsField = limit('posts') + '{created_time,description,link,message,picture,shares,likes.summary(1),comments.summary(1),attachments}';
   var friendsField = limit('friends');
@@ -70,8 +71,34 @@ module.exports.meDump = function(callback) {
   else {
     api('/me?fields=' + [postsField, friendsField].join(','), fbCallDidFinish);
     api('/me?fields=' + [eventsField, likesField, demographicFields].join(','), fbCallDidFinish);
-    api('/me?fields=' + photosField, fbCallDidFinish);
     api('/me?fields=' + albumsField, fbCallDidFinish);
+
+    api('/me?fields=' + photosField, function(response) {
+      if (!response.photos || !response.photos.data || !response.photos.paging || !response.photos.paging.next) {
+        fbCallDidFinish(response);
+        return;
+      }
+
+      var pagesAddedCount = 0;
+      var desiredPagesToAdd = 1;
+
+      function getNextPage(nextPageURL) {
+        pagesAddedCount += 1;
+
+        $.get(nextPageURL, function(pageResponse) {
+          Array.prototype.push.apply(response.photos.data, pageResponse.data);
+
+          if (pagesAddedCount < desiredPagesToAdd && pageResponse.paging.next) {
+            getNextPage(pageResponse.paging.next);
+          }
+          else {
+            fbCallDidFinish(response);
+          }
+        });
+      }
+
+      getNextPage(response.photos.paging.next);
+    });
   }
 
   var callsFinished = 0;
@@ -88,7 +115,6 @@ module.exports.meDump = function(callback) {
       return;
     }
 
-    console.log('final output: ');
     console.log(combinedResponses);
     callback(combinedResponses);
   }

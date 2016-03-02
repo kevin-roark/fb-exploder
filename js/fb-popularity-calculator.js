@@ -11,6 +11,7 @@ var CommentValue = 2;
 var ShareValue = 3;
 
 var apiHost = 'http://localhost:3000';
+var hasGoneHomeFromInactivity = false;
 
 var $container;
 $(function() {
@@ -85,11 +86,12 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   setTimeout(function() {
     if (!hasEnteredSharingState) {
+      hasGoneHomeFromInactivity = true;
       $('.popularity-zone').fadeOut(3000);
       phraseScatterer.hide(3000);
       setTimeout(finishedCallback, 3000);
     }
-  }, 15 * 1000);
+  }, 22 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -171,6 +173,10 @@ function enterSharingState(bestContent, finishedCallback) {
 
         var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
         $shareButton.click(function() {
+          if (hasGoneHomeFromInactivity) {
+            return;
+          }
+
           if (!hasSharedToFacebook) {
             hasSharedToFacebook = true;
             $('.celebrity-head').css('pointer', 'auto');
@@ -236,7 +242,6 @@ function enterSharingState(bestContent, finishedCallback) {
 function shareCanvasToFacebook(canvas, callback) {
   // share image first
   uploadCanvasToCloudinary(canvas, function(error, imageURL) {
-    console.log(imageURL);
     shareToFacebookWithImageURL(imageURL);
 
     function shareToFacebookWithImageURL(imageURL) {
@@ -368,7 +373,7 @@ function renderedBestPhotos(photos) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + image + '"/></div>');
     $el.append($wrapper);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>').css('top', '5px'));
   }
 
   return $el;
@@ -388,7 +393,7 @@ function renderedBestPosts(posts) {
     $post.css('position', 'relative');
     $wrapper.append($post);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(posts[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(posts[i]) + '</div>').css('right', '24px').css('top', '5px'));
   }
 
   return $el;
@@ -408,7 +413,7 @@ function renderedBestEvents(events) {
     $event.css('position', 'relative');
     $wrapper.append($event);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateEventPoints(events[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateEventPoints(events[i]) + '</div>').css('bottom', '8px').css('right', '12px'));
   }
 
   return $el;
@@ -428,7 +433,7 @@ function renderedBestLikes(likes) {
     $like.css('position', 'relative');
     $wrapper.append($like);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateLikePoints(likes[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateLikePoints(likes[i]) + '</div>').css('right', '24px').css('top', '2px'));
   }
 
   return $el;

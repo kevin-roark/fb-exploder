@@ -4,8 +4,8 @@ var fbRenderer = require('./fb-renderer');
 var ScoreKeeper = require('./scorekeeper');
 
 var DelayBeforePhotoWaterfall = 9999;
-var DelayBeforePostsWaterfall = 18666;
-var DelayBeforeDataWaterfall = 27666;
+var DelayBeforePostsWaterfall = 35666;
+var DelayBeforeDataWaterfall = 53666;
 
 var $container, $photosLayer, $albumsLayer, $postsLayer, $likesLayer, $eventsLayer, $staticLayer, orderedLayers, scorekeeper;
 $(function() {
@@ -72,7 +72,7 @@ module.exports.mouseUpdate = function _mouseUpdate(x) {
   var containerRotation = 0; //xPercent * 10 - 5;
   $container.css('transform', 'rotateY(' + containerRotation + 'deg)');
 
-  var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 100;
+  var xTranslationMagnitude = Math.pow(normalizedXPercent, 1) * 400;
   if (xPercent < 0.5) xTranslationMagnitude = -xTranslationMagnitude;
 
   for (var i = 0; i < orderedLayers.length; i++) {
@@ -235,11 +235,11 @@ function setupDataStream(data, renderer, $layer, options) {
   var widthVariance = options.widthVariance || 150;
   var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
   var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
-  var minSpeed = options.minSpeed || 1;
-  var maxSpeed = options.maxSpeed || 10;
+  var minSpeed = options.minSpeed || 1.5;
+  var maxSpeed = options.maxSpeed || 9.5;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
-  var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 4 minutes
+  var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 3.5 minutes
 
   var dataIndex = 0;
   var activeRenderedElements = [];
@@ -247,8 +247,8 @@ function setupDataStream(data, renderer, $layer, options) {
 
   setTimeout(function() {
     stillStreaming = false;
-    widthVarianceGrowthRate = 1.002;
-    maxWidthVariance= window.innerWidth * 0.55
+    widthVarianceGrowthRate = 1.006;
+    maxWidthVariance= window.innerWidth * 0.55;
   }, totalStreamTime);
 
   function doNextItem() {
@@ -273,7 +273,7 @@ function setupDataStream(data, renderer, $layer, options) {
     $html.css('width', width + 'px');
     $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
     $html.css('top', '0');
-    $html._speed = kt.randInt(minSpeed, maxSpeed);
+    $html._speed = (Math.random() * (maxSpeed - minSpeed)) + minSpeed;
     $html._yOffset = -500;
     updateYTranslation($html);
 
@@ -309,10 +309,10 @@ function setupStaticDataStack(data, renderer, options) {
   }
 
   var minWidth = options.minWidth || 200;
-  var minDelay = options.minDelay || 100;
-  var widthVariance = options.widthVariance || 150;
-  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0006;
-  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
+  var minDelay = options.minDelay || 150;
+  var widthVariance = options.widthVariance || 200;
+  var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
+  var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.55;
   var elementLifespan = options.elementLifespan || 4000;
   var initialDelayBetweenElements = options.initialDelayBetweenElements || 5000;
   var delayDecayRate = options.delayDecayRate || 0.997; // exponential
@@ -353,7 +353,7 @@ function setupStaticDataStack(data, renderer, options) {
 
 function updateYTranslation($html, speed) {
   if (speed) {
-    $html._yOffset += speed;
+    $html._yOffset = Math.round($html._yOffset + speed);
   }
 
   $html.css('transform', 'translateY(' + $html._yOffset + 'px)');

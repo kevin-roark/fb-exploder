@@ -13,10 +13,14 @@ module.exports.renderedPhoto = function _renderedPhoto(photo) {
   return $img;
 };
 
-module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo) {
+module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo, options) {
+  if (!options) options = {};
+  var attemptHighResolution = options.attemptHighResolution !== undefined ? options.attemptHighResolution : true;
+  var imageURL = (attemptHighResolution && photo.images && photo.images.length > 0) ? photo.images[0].source : photo.picture;
+
   var html = '<div class="fb-element fb-photo">';
 
-  html += '<img class="fb-album-photo" src="' + photo.picture + '"/>';
+  html += '<img class="fb-album-photo" src="' + imageURL + '"/>';
 
   if (photo.name && photo.name.length > 0) {
     html += div('fb-photo-caption', photo.name);
