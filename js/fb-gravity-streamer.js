@@ -235,8 +235,8 @@ function setupDataStream(data, renderer, $layer, options) {
   var widthVariance = options.widthVariance || 150;
   var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
   var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
-  var minSpeed = options.minSpeed || 1;
-  var maxSpeed = options.maxSpeed || 10;
+  var minSpeed = options.minSpeed || 1.5;
+  var maxSpeed = options.maxSpeed || 9.5;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
   var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 3.5 minutes
@@ -273,7 +273,7 @@ function setupDataStream(data, renderer, $layer, options) {
     $html.css('width', width + 'px');
     $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
     $html.css('top', '0');
-    $html._speed = kt.randInt(minSpeed, maxSpeed);
+    $html._speed = (Math.random() * (maxSpeed - minSpeed)) + minSpeed;
     $html._yOffset = -500;
     updateYTranslation($html);
 
@@ -353,7 +353,7 @@ function setupStaticDataStack(data, renderer, options) {
 
 function updateYTranslation($html, speed) {
   if (speed) {
-    $html._yOffset += speed;
+    $html._yOffset = Math.round($html._yOffset + speed);
   }
 
   $html.css('transform', 'translateY(' + $html._yOffset + 'px)');

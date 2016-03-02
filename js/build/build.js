@@ -368,8 +368,8 @@ function setupDataStream(data, renderer, $layer, options) {
   var widthVariance = options.widthVariance || 150;
   var widthVarianceGrowthRate = options.widthVarianceGrowthRate || 1.0000;
   var maxWidthVariance = options.maxWidthVariance || window.innerWidth * 0.75;
-  var minSpeed = options.minSpeed || 1;
-  var maxSpeed = options.maxSpeed || 10;
+  var minSpeed = options.minSpeed || 1.5;
+  var maxSpeed = options.maxSpeed || 9.5;
   var minDelay = options.minDelay || 1000;
   var delayVariance = options.delayVariance || 1200;
   var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 3.5 minutes
@@ -406,7 +406,7 @@ function setupDataStream(data, renderer, $layer, options) {
     $html.css('width', width + 'px');
     $html.css('left', (Math.random() * (window.innerWidth - width) * 1.15) + 'px');
     $html.css('top', '0');
-    $html._speed = kt.randInt(minSpeed, maxSpeed);
+    $html._speed = (Math.random() * (maxSpeed - minSpeed)) + minSpeed;
     $html._yOffset = -500;
     updateYTranslation($html);
 
@@ -486,7 +486,7 @@ function setupStaticDataStack(data, renderer, options) {
 
 function updateYTranslation($html, speed) {
   if (speed) {
-    $html._yOffset += speed;
+    $html._yOffset = Math.round($html._yOffset + speed);
   }
 
   $html.css('transform', 'translateY(' + $html._yOffset + 'px)');
@@ -513,6 +513,7 @@ var CommentValue = 2;
 var ShareValue = 3;
 
 var apiHost = 'http://localhost:3000';
+var hasGoneHomeFromInactivity = false;
 
 var $container;
 $(function() {
@@ -587,11 +588,12 @@ module.exports.start = function _start(dump, finishedCallback) {
 
   setTimeout(function() {
     if (!hasEnteredSharingState) {
+      hasGoneHomeFromInactivity = true;
       $('.popularity-zone').fadeOut(3000);
       phraseScatterer.hide(3000);
       setTimeout(finishedCallback, 3000);
     }
-  }, 15 * 1000);
+  }, 22 * 1000);
 };
 
 function enterSharingState(bestContent, finishedCallback) {
@@ -673,6 +675,10 @@ function enterSharingState(bestContent, finishedCallback) {
 
         var $shareButton = $('<div class="shadow-button facebook-style-button" id="facebook-share-button">Share To Facebook Now</div>');
         $shareButton.click(function() {
+          if (hasGoneHomeFromInactivity) {
+            return;
+          }
+
           if (!hasSharedToFacebook) {
             hasSharedToFacebook = true;
             $('.celebrity-head').css('pointer', 'auto');
@@ -870,7 +876,7 @@ function renderedBestPhotos(photos) {
     var $wrapper = $('<div class="popularity-fb-element-wrapper"><img class="popularity-element" src="' + image + '"/></div>');
     $el.append($wrapper);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(photos[i]) + '</div>').css('top', '5px'));
   }
 
   return $el;
@@ -890,7 +896,7 @@ function renderedBestPosts(posts) {
     $post.css('position', 'relative');
     $wrapper.append($post);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(posts[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateStandardPoints(posts[i]) + '</div>').css('right', '24px').css('top', '5px'));
   }
 
   return $el;
@@ -910,7 +916,7 @@ function renderedBestEvents(events) {
     $event.css('position', 'relative');
     $wrapper.append($event);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateEventPoints(events[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateEventPoints(events[i]) + '</div>').css('bottom', '8px').css('right', '12px'));
   }
 
   return $el;
@@ -930,7 +936,7 @@ function renderedBestLikes(likes) {
     $like.css('position', 'relative');
     $wrapper.append($like);
 
-    $wrapper.append($('<div class="popularity-score-overlay">' + calculateLikePoints(likes[i]) + '</div>'));
+    $wrapper.append($('<div class="popularity-score-overlay">' + calculateLikePoints(likes[i]) + '</div>').css('right', '24px').css('top', '2px'));
   }
 
   return $el;
@@ -1169,10 +1175,14 @@ module.exports.renderedPhoto = function _renderedPhoto(photo) {
   return $img;
 };
 
-module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo) {
+module.exports.renderedAlbumPhoto = function _renderedAlbumPhoto(photo, options) {
+  if (!options) options = {};
+  var attemptHighResolution = options.attemptHighResolution !== undefined ? options.attemptHighResolution : true;
+  var imageURL = (attemptHighResolution && photo.images && photo.images.length > 0) ? photo.images[0].source : photo.picture;
+
   var html = '<div class="fb-element fb-photo">';
 
-  html += '<img class="fb-album-photo" src="' + photo.picture + '"/>';
+  html += '<img class="fb-album-photo" src="' + imageURL + '"/>';
 
   if (photo.name && photo.name.length > 0) {
     html += div('fb-photo-caption', photo.name);
@@ -7182,12 +7192,6 @@ TWEEN.Tween = function (object) {
 
 			}
 
-			// If `to()` specifies a property that doesn't exist in the source object,
-			// we should not set that property in the object
-			if (_valuesStart[property] === undefined) {
-				continue;
-			}
-
 			_valuesStart[property] = _object[property];
 
 			if ((_valuesStart[property] instanceof Array) === false) {
@@ -7326,11 +7330,6 @@ TWEEN.Tween = function (object) {
 
 		for (property in _valuesEnd) {
 
-			// Don't update properties that do not exist in the source object
-			if (_valuesStart[property] === undefined) {
-				continue;
-			}
-
 			var start = _valuesStart[property] || 0;
 			var end = _valuesEnd[property];
 
@@ -7342,12 +7341,7 @@ TWEEN.Tween = function (object) {
 
 				// Parses relative end values with start as base (e.g.: +10, -3)
 				if (typeof (end) === 'string') {
-
-					if (end.startsWith('+') || end.startsWith('-')) {
-						end = start + parseFloat(end, 10);
-					} else {
-						end = parseFloat(end, 10);
-					}
+					end = start + parseFloat(end, 10);
 				}
 
 				// Protect against non numeric properties.
@@ -7902,12 +7896,12 @@ TWEEN.Interpolation = {
 			return TWEEN;
 		});
 
-	} else if (typeof module !== 'undefined' && typeof exports === 'object') {
+	} else if (typeof exports === 'object') {
 
 		// Node.js
 		module.exports = TWEEN;
 
-	} else if (root !== undefined) {
+	} else {
 
 		// Global variable
 		root.TWEEN = TWEEN;
