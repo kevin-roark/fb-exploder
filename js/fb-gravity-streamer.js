@@ -368,7 +368,7 @@ function setupStaticDataStack(data, renderer, options) {
     // widthVariance = Math.pow(widthVariance, widthVarianceGrowthRate); This is very hard to control
 
     if (growWidth) {
-      widthVariance = widthVariance + 0.3;
+      widthVariance = widthVariance + 0.4;
     }
 
     widthVariance = Math.min(maxWidthVariance, widthVariance);
