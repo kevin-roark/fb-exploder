@@ -512,7 +512,7 @@ var LikeValue = 1;
 var CommentValue = 2;
 var ShareValue = 3;
 
-var apiHost = 'http://localhost:3000';
+var apiHost = 'http://104.131.72.3:3202'; //'http://localhost:3000';
 var hasGoneHomeFromInactivity = false;
 
 var $container;
