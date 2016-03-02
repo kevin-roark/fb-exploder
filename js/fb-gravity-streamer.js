@@ -214,7 +214,7 @@ function handleLikes(likes) {
 function handleEvents(events) {
   if (!events) { return; }
 
-  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1000});
+  setupDataStream(events, fbRenderer.renderedEvent, $eventsLayer, {minWidth: 300, widthVariance: 200, minDelay: 1500});
   setTimeout(function() {
     setupStaticDataStack(events, fbRenderer.renderedEvent, {
       minWidth: 300,
