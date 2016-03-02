@@ -321,7 +321,7 @@ function setupStaticDataStack(data, renderer, options) {
   var totalStreamTime = options.totalStreamTime || 3.5 * 60000; // 3.5 minutes
   var fadeTime = options.fadeTime || 400;
   var fadeDecayRate = options.fadeDecayRate || 0.9995;
-  var minFadeTime = options.minFadeTime || 100;
+  var minFadeTime = options.minFadeTime || 25;
   var growWidth = options.growWidth || false;
   var currentDelayBetweenElements = initialDelayBetweenElements;
 
@@ -352,7 +352,7 @@ function setupStaticDataStack(data, renderer, options) {
     // }
 
     // Scaled method for fade decrease
-    fadeTime = currentDelayBetweenElements / 10;
+    fadeTime = currentDelayBetweenElements / 11;
     if (fadeTime < minFadeTime) {
       fadeTime = minFadeTime;
     }
