@@ -33,6 +33,12 @@ $(function() {
 
   fb.init(function() {
     friendsSound.loop().play();
+    var isMuted = false;
+    $('.sound-toggle').click(function() {
+      isMuted = !isMuted;
+      friendsSound.setVolume(isMuted ? 0 : 80);
+    });
+
     $facebookLoginButton.animate({opacity: 1}, 500);
   });
 
