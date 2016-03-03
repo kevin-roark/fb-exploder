@@ -166,8 +166,11 @@ var shouldUpdate = true;
 /// Public
 
 module.exports.start = function _start(dump) {
+  $('.sound-toggle').fadeOut();
+
   if (dump.albums) {
     handleAlbums(dump.albums.data);
+  }
 
   setTimeout(function() {
     if (dump.photos) {
@@ -524,7 +527,6 @@ function removeFromArray(arr, el) {
   if (idx > -1) {
     arr.splice(idx, 1);
   }
-}
 }
 
 },{"./fb-renderer":5,"./scorekeeper":12,"kutility":14}],4:[function(require,module,exports){
